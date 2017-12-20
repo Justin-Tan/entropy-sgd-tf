@@ -36,13 +36,13 @@ class Model():
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        self.logits = Network.cnn(self.example, config, self.training_phase, self.rnn_keep_prob)
+        self.logits = Network.cnn(self.example, config, self.training_phase)
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         self.cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
-            labels=self.label)
+            labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
 
         with tf.control_dependencies(update_ops):
@@ -56,7 +56,7 @@ class Model():
             self.train_op = tf.group(maintain_averages_op)
 
         self.str_accuracy, self.update_accuracy = tf.metrics.accuracy(self.labels, self.pred)
-        correct_prediction = tf.equal(self.labels, self.pred)
+        correct_prediction = tf.equal(self.labels, tf.cast(self.pred, tf.int32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         tf.summary.scalar('accuracy', self.accuracy)

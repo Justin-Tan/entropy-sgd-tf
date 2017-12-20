@@ -118,3 +118,5 @@ shapes_cache
 
 # Other data
 *.swp
+checkpoints/
+tensorboard/

@@ -26,7 +26,7 @@ class Diagnostics(object):
             t_acc, t_loss, t_summary = sess.run([model.accuracy, model.cost, model.merge_op], feed_dict=feed_dict_train)
             model.train_writer.add_summary(t_summary)
         except tf.errors.OutOfRangeError:
-            t_loss, t_acc = 'n/a', 'n/a'
+            t_loss, t_acc = float('nan'), float('nan')
 
         v_acc, v_loss, v_summary = sess.run([model.accuracy, model.cost, model.merge_op], feed_dict=feed_dict_test)
         model.test_writer.add_summary(v_summary)
@@ -44,9 +44,6 @@ class Diagnostics(object):
             save_path = saver.save(sess, os.path.join(directories.checkpoints, 'crnn_{}_epoch{}.ckpt'.format(config.mode, epoch)), global_step=epoch)
             print('Graph saved to file: {}'.format(save_path))
 
-        if isinstance(t_loss, str):
-            print('Epoch {} | Training Acc: {} | Test Acc: {:.3f} | Train Loss: {} | Test Loss: {:.3f} | LER: {:.3f} | Rate: {} examples/s ({:.2f} s) {}'.format(epoch, t_acc, v_acc, t_loss, v_loss, int(config.batch_size/(time.time()-t0)), time.time() - start_time, improved))
-        else:
-            print('Epoch {} | Training Acc: {:.3f} | Test Acc: {:.3f} | Train Loss: {:.3f} | Test Loss: {:.3f} | LER: {:.3f} | Rate: {} examples/s ({:.2f} s) {}'.format(epoch, t_acc, v_acc, t_loss, v_loss, int(config.batch_size/(time.time()-t0)), time.time() - start_time, improved))
+        print('Epoch {} | Training Acc: {:.3f} | Test Acc: {:.3f} | Train Loss: {:.3f} | Test Loss: {:.3f} | Rate: {} examples/s ({:.2f} s) {}'.format(epoch, t_acc, v_acc, t_loss, v_loss, int(config.batch_size/(time.time()-t0)), time.time() - start_time, improved))
 
         return v_acc_best

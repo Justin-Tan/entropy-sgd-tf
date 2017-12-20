@@ -21,7 +21,7 @@ def train(config, architecture, restore=False, restore_path=None):
     ckpt = tf.train.get_checkpoint_state(directories.checkpoints)
 
     # Build graph
-    cnn = Model(config_train, directories, paths, labels)
+    cnn = Model(config_train, directories)
     saver = tf.train.Saver()
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
@@ -44,6 +44,8 @@ def train(config, architecture, restore=False, restore_path=None):
 
         for epoch in range(config.num_epochs):
             sess.run(cnn.train_iterator.initializer)
+            # Run diagnostics
+            v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, start_time, v_acc_best, epoch)
             while True:
                 try:
                     sess.run([cnn.train_op, cnn.update_accuracy], feed_dict={cnn.training_phase: True,
@@ -59,8 +61,6 @@ def train(config, architecture, restore=False, restore_path=None):
                     print('Interrupted, model saved to: ', save_path)
                     sys.exit()
 
-                # Run diagnostics at end of epoch
-                v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, start_time, v_acc_best, epoch)
 
         save_path = saver.save(sess, os.path.join(directories.checkpoints,
                                'cnn_{}_end.ckpt'.format(config.mode)),
@@ -74,10 +74,6 @@ def main(**kwargs):
     parser.add_argument("-r", "--restore", help="path to model to be restored")
     args = parser.parse_args()
     config=config_train
-
-    # Load training, test data
-    paths, labels = Data.load_dataframe(directories.train)
-    test_paths, test_labels = Data.load_dataframe(directories.test)
 
     architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | Epochs: {}'.format(
                     config.n_layers,

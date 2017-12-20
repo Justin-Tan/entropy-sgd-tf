@@ -42,7 +42,7 @@ class Data(object):
         return image
 
     @staticmethod
-    def load_dataset(filename, batch_size, resize=(32,32), test=False,
+    def load_dataset(filenames, batch_size, resize=(32,32), test=False,
                      augment=False):
         # Consume TFRecord image data
 
@@ -56,13 +56,15 @@ class Data(object):
 
         def _parser(record):
             keys_to_features = {
-                "image_data": tf.FixedLenFeature((), tf.string, default_value=""),
+                "image/encoded": tf.FixedLenFeature((), tf.string, default_value=""),
                 "image/class/label": tf.FixedLenFeature((), tf.int64)
             }
             parsed = tf.parse_single_example(record, keys_to_features)
 
-            image = tf.image.decode_png(parsed["image_data"])
+            # image = tf.decode_raw(parsed['image/encoded'], tf.uint8)
+            image = tf.image.decode_image(parsed["image/encoded"])
             image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+            image.set_shape([32,32,3])
 
             if augment:
                 image = _augment(image)
@@ -73,7 +75,8 @@ class Data(object):
 
             return image, label
 
-        dataset = dataset.map(_preprocess)
+        dataset = tf.contrib.data.TFRecordDataset(filenames)
+        dataset = dataset.map(_parser)
         dataset = dataset.shuffle(buffer_size=2048)
         dataset = dataset.batch(batch_size)
 
