@@ -21,15 +21,14 @@ class config_train(object):
     ema_decay = 0.999
     learning_rate = 8e-5
     n_classes = 10
-    conv_keep_prob = 0.8
-    dense_keep_prob = 0.8
+    conv_keep_prob = 0.75
+    dense_keep_prob = 0.75
     im_x = 32
     im_y = 32
 
 class directories(object):
-    train = 'train.h5'
-    test = 'test.h5'
+    train = 'tfrecords/cifar10/cifar10_train.tfrecord'
+    test = 'tfrecords/cifar10/cifar10_test.tfrecord'
     tensorboard = 'tensorboard'
     checkpoints = 'checkpoints'
     checkpoints_best = 'checkpoints/best'
-

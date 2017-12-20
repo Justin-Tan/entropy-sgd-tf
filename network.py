@@ -5,7 +5,7 @@ import glob, time, os
 class Network(object):
 
     @staticmethod
-    def conv_rnn_ctc(x, config, training, rnn_keep_prob, reuse=False, actv=tf.nn.relu):
+    def cnn(x, config, training, reuse=False, actv=tf.nn.relu):
         init = tf.contrib.layers.xavier_initializer()
         kwargs = {'center': True, 'scale': True, 'training': training, 'fused': True, 'renorm': True}
         with tf.variable_scope('conv_rnn', reuse=reuse):
@@ -59,7 +59,7 @@ class Network(object):
                 pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='same')
                 bn = tf.layers.batch_normalization(pool, **kwargs)
                 hidden5 = tf.layers.dropout(bn, rate=1-config.conv_keep_prob, training=training)
-            
+
             # batch norm
             with tf.variable_scope('conv6', reuse=reuse):
                 conv = tf.layers.conv2d(hidden3, filters=512, kernel_size=[3,3], activation=actv,
@@ -72,4 +72,3 @@ class Network(object):
                 cnn_out = tf.layers.dense(hidden6, units=config.n_classes, kernel_initializer=init)
 
         return cnn_out
-

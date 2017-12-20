@@ -14,7 +14,7 @@ from config import config_train, directories
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-def train(config, architecture, paths, labels, paths_test, labels_test, restore=False, restore_path=None): 
+def train(config, architecture, restore=False, restore_path=None):
     print('Architecture: {}'.format(architecture))
     start_time = time.time()
     global_step, n_checkpoints, v_acc_best = 0, 0, 0.
@@ -27,7 +27,6 @@ def train(config, architecture, paths, labels, paths_test, labels_test, restore=
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        sess.run(tf.tables_initializer())
         train_handle = sess.run(cnn.train_iterator.string_handle())
         test_handle = sess.run(cnn.test_iterator.string_handle())
 
@@ -41,39 +40,30 @@ def train(config, architecture, paths, labels, paths_test, labels_test, restore=
                 new_saver.restore(sess, restore_path)
                 print('{} restored.'.format(restore_path))
 
-        sess.run(cnn.test_iterator.initializer, feed_dict={
-            cnn.test_path_placeholder:paths_test,
-            cnn.test_labels_placeholder:labels_test
-        })
+        sess.run(cnn.test_iterator.initializer)
 
         for epoch in range(config.num_epochs):
-            sess.run(cnn.train_iterator.initializer, feed_dict={
-                cnn.path_placeholder:paths,
-                cnn.labels_placeholder:labels
-            })
-            
+            sess.run(cnn.train_iterator.initializer)
             while True:
                 try:
                     sess.run([cnn.train_op, cnn.update_accuracy], feed_dict={cnn.training_phase: True,
-                        cnn.rnn_keep_prob: config.rnn_keep_prob, cnn.handle: train_handle})
-                    global_step+=1
+                        cnn.handle: train_handle})
 
                 except tf.errors.OutOfRangeError:
                     print('End of epoch!')
                     break
-                
+
                 except KeyboardInterrupt:
                     save_path = saver.save(sess, os.path.join(directories.checkpoints,
-                        'crnn_{}_last.ckpt'.format(config.mode)), global_step=epoch)
+                        'cnn_{}_last.ckpt'.format(config.mode)), global_step=epoch)
                     print('Interrupted, model saved to: ', save_path)
                     sys.exit()
 
-                if global_step%100==0:
-                    v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, global_step, start_time, v_acc_best, epoch)
-
+                # Run diagnostics at end of epoch
+                v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, start_time, v_acc_best, epoch)
 
         save_path = saver.save(sess, os.path.join(directories.checkpoints,
-                               'crnn_{}_end.ckpt'.format(config.mode)),
+                               'cnn_{}_end.ckpt'.format(config.mode)),
                                global_step=epoch)
 
     print("Training Complete. Model saved to file: {} Time elapsed: {:.3f} s".format(save_path, time.time()-start_time))
@@ -89,16 +79,14 @@ def main(**kwargs):
     paths, labels = Data.load_dataframe(directories.train)
     test_paths, test_labels = Data.load_dataframe(directories.test)
 
-    architecture = 'Layers: {} | Conv dropout: {} | RNN dropout: {} | Base LR: {} | Epochs: {}'.format(
+    architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | Epochs: {}'.format(
                     config.n_layers,
                     config.conv_keep_prob,
-                    config.rnn_keep_prob,
                     config.learning_rate,
                     config.num_epochs
     )
     # Launch training
-    train(config_train, architecture, paths=paths, labels=labels, paths_test = test_paths, labels_test = test_labels,
-            restore=args.restore_last, restore_path=args.restore)
+    train(config_train, architecture, restore=args.restore_last, restore_path=args.restore)
 
 if __name__ == '__main__':
     main()
