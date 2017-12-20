@@ -1,5 +1,5 @@
 # entropy-sgd-tf
-TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide valleys](https://arxiv.org/pdf/1611.01838.pdf). 
+TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide valleys](https://arxiv.org/pdf/1611.01838.pdf). Entropy-SGD uses geometric information about the energy landscape to bias the optimization algorithm toward flat regions, which may aid generalization. Convergence when training on CIFAR-10, CIFAR-100 is compared with vanilla SGD, Adam and momentum-based optimizers.
 
 ## Instructions
 The model should automatically download and process the CIFAR-10 dataset when first run.
@@ -12,6 +12,13 @@ $ python3 train.py -h
 $ python3 train.py <args> 
 ```
 ## Results
+Both CIFAR-10/100 CNNs are trained with the same hyperparameters specified in the original paper. 
+
+### CIFAR-10
+```
+# Plots showing convergence of entropy-sgd v. sgd, Adam here.
+```
+### CIFAR-100
 ```
 # Plots showing convergence of entropy-sgd v. sgd, Adam here.
 ```
@@ -23,3 +30,4 @@ $ python3 train.py <args>
 ## Related work
 * [Original lua implementation](https://github.com/ucla-vision/entropy-sgd).
 * [Simplfying neural nets by discovering flat minima](https://papers.nips.cc/paper/899-simplifying-neural-nets-by-discovering-flat-minima.pdf) Related work by Schmidhuber and Hochreiter.
+* [PDEs for optimizing deep neural networks](https://arxiv.org/pdf/1704.04932.pdf). Followup work by Chaudhari et. al
