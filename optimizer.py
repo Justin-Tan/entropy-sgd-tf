@@ -20,7 +20,7 @@ from config import config_train
 
 class EntropySGD(optimizer.Optimizer):
 
-    def __init__(self, config={}, iterator, training_phase, global_step,
+    def __init__(self, iterator, training_phase, global_step, config={},
                  use_locking=False, name='EntropySGD'):
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
         defaults = dict(lr=0.01, momentum=0, damp=0,

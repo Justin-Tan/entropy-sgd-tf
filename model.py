@@ -49,10 +49,8 @@ class Model():
         with tf.control_dependencies(update_ops):
             # Ensures that we execute the update_ops before performing the train_step
             # self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
-            opt = EntropySGD({'lr':1e-3, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1},
-                             self.iterator,
-                             self.training_phase,
-                             self.global_step)
+            opt = EntropySGD(self.iterator, self.training_phase, self.global_step,
+                             config={'lr':1e-3, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
             self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=config.ema_decay, num_updates=self.global_step)
