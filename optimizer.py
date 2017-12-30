@@ -70,7 +70,7 @@ class EntropySGD(optimizer.Optimizer):
         # Manage variables that accumulate updates
         # Creates slots for x', the expectation μ = <x'> and current weights
         for v in var_list:
-            gamma = self._zeros_slot(v, "gamma", self._name)
+            # gamma = self._zeros_slot(v, "gamma", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
             # gs = self._zeros_slot(v, "gs", self._name)
 
@@ -94,9 +94,10 @@ class EntropySGD(optimizer.Optimizer):
 
         mu = self.get_slot(var, 'mu')
         # gs = self.get_slot(var 'gs')
-        gamma = self.get_slot(var, 'gamma')
+        # gamma = self.get_slot(var, 'gamma')
 
-        gamma_t = gamma.assign(g0_t*tf.pow((1+g1), self.global_step))
+        gamma_t = g0_t*tf.pow(1.0+g1_t, tf.cast(self.global_step), tf.float32)
+        # gamma_t = gamma.assign(g0_t*tf.pow((1+g1_t), self.global_step))
         # gs_t = gs.assign(gs+1)
         mu_t = mu.assign((1-alpha_t)*mu + alpha_t*var)
 
