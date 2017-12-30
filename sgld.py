@@ -91,10 +91,11 @@ class local_entropy_sgld(optimizer.Optimizer):
             lambda: wc.assign(var),
             lambda: wc)
 
+        eta = tf.random_normal(shape=var.get_shape())
         dx = grad - gamma_t*(wc-var)
-        update = -lr_prime_t*dx + tf.sqrt(lr_prime)*epsilon_t
+        update = -lr_prime_t*dx + tf.sqrt(lr_prime)*epsilon_t*eta
         xp_t = xp.assign(var - update)
-        mu_t = mu.assign(alpha_t*(var-update) + (1.0-alpha_t)*mu)
+        mu_t = mu.assign((1.0-alpha_t)*mu + alpha_t*(var-update))
 
         var_update = state_ops.assign_sub(var, update)
 
