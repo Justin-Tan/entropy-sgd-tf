@@ -61,7 +61,7 @@ class local_entropy_sgld(optimizer.Optimizer):
             xp = self._zeros_slot(v, "xp", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
 
-    def _apply_dense(self, config, grad, var):
+    def _apply_dense(self, grad, var):
         # define your favourite variable update
         '''
         # Here we apply gradient descents by substracting the variables
@@ -101,5 +101,5 @@ class local_entropy_sgld(optimizer.Optimizer):
 
         return control_flow_ops.group(*[var_update, wc_t, xp_t, mu_t])
 
-    def _apply_sparse(self, config, grad, var_list):
+    def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")

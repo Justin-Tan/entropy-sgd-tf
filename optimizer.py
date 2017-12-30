@@ -83,7 +83,7 @@ class EntropySGD(optimizer.Optimizer):
         self.inner = self.sgld_opt.minimize(self.cost)
 
 
-    def _apply_dense(self, config, grad, var):
+    def _apply_dense(self, grad, var):
         # Apply weight updates
         lr_t = math_ops.cast(self._lr_tensor, var.dtype.base_dtype)
         lr_prime_t = math_ops.cast(self._lr_prime_tensor, var.dtype.base_dtype)
@@ -116,5 +116,5 @@ class EntropySGD(optimizer.Optimizer):
 
         return control_flow_ops.group(*[var_update, gamma_t, mu_t])
 
-    def _apply_sparse(self, config, grad, var_list):
+    def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")
