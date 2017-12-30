@@ -9,10 +9,10 @@ $ cd entropy-sgd-tf
 # Check command line arguments
 $ python3 train.py -h
 # Run
-$ python3 train.py <args> 
+$ python3 train.py <args>
 ```
 ## Results
-Both CIFAR-10/100 CNNs are trained with the same hyperparameters specified in the original paper. 
+Both CIFAR-10/100 CNNs are trained with the same hyperparameters specified in the original paper.
 
 ### CIFAR-10
 ```
@@ -30,4 +30,5 @@ Both CIFAR-10/100 CNNs are trained with the same hyperparameters specified in th
 ## Related work
 * [Original lua implementation](https://github.com/ucla-vision/entropy-sgd).
 * [Simplfying neural nets by discovering flat minima](https://papers.nips.cc/paper/899-simplifying-neural-nets-by-discovering-flat-minima.pdf) Related work by Schmidhuber and Hochreiter.
+* [Stochastic gradient Langevin dynamics](https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf#cite.RobCas2004a). Used to approximate the expectation in the update step
 * [PDEs for optimizing deep neural networks](https://arxiv.org/pdf/1704.04932.pdf). Followup work by Chaudhari et. al
