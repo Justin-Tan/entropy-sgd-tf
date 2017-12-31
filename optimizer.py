@@ -37,7 +37,10 @@ class EntropySGD(optimizer.Optimizer):
         self.training_phase = training_phase
         self.global_step = global_step
 
-        # Parameter tensors
+        self._learning_rate = learning_rate
+        self._gamma = gamma
+
+        # Scalar parameter tensors
         self._lr_tensor = None
         self._lr_prime_tensor = None
         self._epsilon_tensor = None
@@ -47,12 +50,14 @@ class EntropySGD(optimizer.Optimizer):
         self._wd_tensor = None
         self._momentum_tensor = None
 
-        # self.sgld_opt = local_entropy_sgld(eta_prime=lr_prime, epsilon=epsilon,
-        #                           gamma=gamma, momentum=momentum, alpha=alpha)
+        self.sgld_opt = local_entropy_sgld(eta_prime=lr_prime, epsilon=epsilon,
+            gamma=gamma, momentum=momentum, alpha=alpha)
 
     def _prepare(self):
-        self._lr_tensor = ops.convert_to_tensor(self.config['lr'],
+        self._lr_tensor = ops.convert_to_tensor(self._learning_rate,
                                                 name="learning_rate")
+        self._gamma_tensor = ops.convert_to_tensor(self._gamma,
+                                                   name="gamma")
         self._lr_prime_tensor = ops.convert_to_tensor(self.config['lr_prime'],
                                                       name="learning_rate_prime")
         self._epsilon_tensor = ops.convert_to_tensor(self.config['eps'],
@@ -70,9 +75,7 @@ class EntropySGD(optimizer.Optimizer):
         # Manage variables that accumulate updates
         # Creates slots for x', the expectation μ = <x'> and current weights
         for v in var_list:
-            # gamma = self._zeros_slot(v, "gamma", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
-            # gs = self._zeros_slot(v, "gs", self._name)
 
     def _langevin_ops(self):
         self.example, self.labels = self.iterator.get_next()
@@ -86,6 +89,7 @@ class EntropySGD(optimizer.Optimizer):
     def _apply_dense(self, grad, var):
         # Apply weight updates
         lr_t = math_ops.cast(self._lr_tensor, var.dtype.base_dtype)
+        gamma_t = math_ops.cast(self._gamma_tensor, var.dtype.base_dtype)
         lr_prime_t = math_ops.cast(self._lr_prime_tensor, var.dtype.base_dtype)
         eps_t = math_ops.cast(self._epsilon_tensor, var.dtype.base_dtype)
         g0_t = math_ops.cast(self._g0_tensor, var.dtype.base_dtype)
@@ -96,7 +100,7 @@ class EntropySGD(optimizer.Optimizer):
         # gs = self.get_slot(var 'gs')
         # gamma = self.get_slot(var, 'gamma')
 
-        gamma_t = g0_t*tf.pow(1.0+g1_t, tf.cast(self.global_step), tf.float32)
+        # gamma_t = g0_t*tf.pow(1.0+g1_t, tf.cast(self.global_step), tf.float32)
         # gamma_t = gamma.assign(g0_t*tf.pow((1+g1_t), self.global_step))
         # gs_t = gs.assign(gs+1)
         mu_t = mu.assign((1-alpha_t)*mu + alpha_t*var)

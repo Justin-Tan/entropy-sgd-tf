@@ -12,7 +12,6 @@ class Model():
         self.global_step = tf.Variable(0, trainable=False)
         self.handle = tf.placeholder(tf.string, shape=[])
         self.training_phase = tf.placeholder(tf.bool)
-        beta = config.learning_rate
 
         train_dataset = Data.load_dataset(directories.train,
                                           config.batch_size,
@@ -46,11 +45,20 @@ class Model():
             labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
 
+        learning_rate = tf.train.natural_exp_decay(config.learning_rate,
+                                                   self.global_step,
+                                                   decay_rate=0.001)
+
+        # Exponential scoping
+        gamma = config.g0*tf.pow(1.0+config.g1, tf.cast(self.global_step), tf.float32)
+        gamma = tf.train.exponential_decay(config.g0, self.global_step,
+                                           decay_steps=1, decay_rate=(1+config.g1))
+
         with tf.control_dependencies(update_ops):
             # Ensures that we execute the update_ops before performing the train_step
             # self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
             opt = EntropySGD(self.iterator, self.training_phase, self.global_step,
-                             config={'lr':1e-3, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
+                             config={'lr':learning_rate, 'gamma':gamma, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
             self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=config.ema_decay, num_updates=self.global_step)
@@ -64,7 +72,8 @@ class Model():
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         tf.summary.scalar('accuracy', self.accuracy)
-        tf.summary.scalar('learning_rate', beta)
+        tf.summary.scalar('learning_rate', learning_rate)
+        tf.summary.scalar('gamma', gamma)
         tf.summary.scalar('cost', self.cost)
         tf.summary.image('images', self.example, max_outputs=8)
         self.merge_op = tf.summary.merge_all()

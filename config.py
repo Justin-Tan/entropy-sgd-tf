@@ -12,6 +12,8 @@ class config_test(object):
     dense_keep_prob = 1.0
     im_x = 32
     im_y = 32
+    g0 = 1e-2
+    g1 = 1e-3
 
 class config_train(object):
     mode = 'beta'
