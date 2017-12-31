@@ -23,10 +23,9 @@ class EntropySGD(optimizer.Optimizer):
     def __init__(self, iterator, training_phase, global_step, config={},
                  use_locking=False, name='EntropySGD'):
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
-        defaults = dict(lr=0.01, momentum=0, damp=0,
-                 weight_decay=0, nesterov=True, L=0,
-                 eps=1e-4, g0=1e-2, g1=1e-3, alpha=0.75,
-                 lr_prime=0.1)
+        defaults = dict(lr=1e-3, gamma=1e-3, momentum=0, damp=0, weight_decay=0,
+                        nesterov=True, L=0, eps=1e-4, g0=3e-2, g1=1e-3,
+                        alpha=0.75, lr_prime=0.1)
         for k in defaults:
             if config.get(k, None) is None:
                 config[k] = defaults[k]
@@ -37,11 +36,12 @@ class EntropySGD(optimizer.Optimizer):
         self.training_phase = training_phase
         self.global_step = global_step
 
-        self._learning_rate = learning_rate
-        self._gamma = gamma
+        self._learning_rate = config['lr']
+        self._gamma = config['gamma']
 
         # Scalar parameter tensors
         self._lr_tensor = None
+        self._gamma_tensor = None
         self._lr_prime_tensor = None
         self._epsilon_tensor = None
         self._g0_tensor = None

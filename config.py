@@ -27,6 +27,8 @@ class config_train(object):
     dense_keep_prob = 0.75
     im_x = 32
     im_y = 32
+    g0 = 1e-2
+    g1 = 1e-3
 
 class directories(object):
     train = 'tfrecords/cifar10/cifar10_train.tfrecord'
