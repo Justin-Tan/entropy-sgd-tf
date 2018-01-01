@@ -18,30 +18,29 @@ from tensorflow.python.ops import state_ops
 
 class local_entropy_sgld(optimizer.Optimizer):
 
-    def __init__(self, start, eta_prime, epsilon, gamma, momentum, alpha,
-                 use_locking=False, name='le_sgld'):
+    def __init__(self, eta_prime, epsilon, gamma, alpha, momentum, L,
+                 sgld_global_step, use_locking=False, name='le_sgld'):
         # Inner loop Langevin dynamics
         super(local_entropy_sgld, self).__init__(use_locking, name)
 
-        self._start = start
         self._lr_prime = eta_prime
         self._epsilon = epsilon
         self._gamma = gamma
         self._momentum = momentum
         self._alpha = alpha
+        self._L = L
+        self.sgld_global_step = sgld_global_step
 
         # Parameter tensors
-        self._start_t = None
         self._lr_prime_t = None
         self._epsilon_t = None
         self._gamma_t = None
         self._momentum_t = None
         self._alpha_t = None
+        self._L_t = None
+        self._sgld_gs_t = None
 
     def _prepare(self):
-
-        self._start_t = ops.convert_to_tensor(self._start,
-                                              name="start")
         self._lr_prime_t = ops.convert_to_tensor(self._lr_prime,
                                                  name="learning_rate_prime")
         self._epsilon_t = ops.convert_to_tensor(self._epsilon,
@@ -52,6 +51,10 @@ class local_entropy_sgld(optimizer.Optimizer):
                                                  name="momentum")
         self._alpha_t = ops.convert_to_tensor(self._alpha,
                                               name="alpha")
+        self._L_t = ops.convert_to_tensor(self._L,
+                                          name="L")
+        self._sgld_gs_t = ops.convert_to_tensor(self.sgld_global_step,
+                                                name="sgld_global_step")
 
     def _create_slots(self, var_list):
         # Manage variables that accumulate updates
@@ -62,21 +65,9 @@ class local_entropy_sgld(optimizer.Optimizer):
             mu = self._zeros_slot(v, "mu", self._name)
 
     def _apply_dense(self, grad, var):
-        # define your favourite variable update
-        '''
-        # Here we apply gradient descents by substracting the variables
-        # with the gradient times the learning_rate (defined in __init__)
-        var_update = state_ops.assign_sub(var, self.learning_rate * grad)
-        '''
-        #The trick is now to pass the Ops in the control_flow_ops and
-        # eventually groups any particular computation of the slots your
-        # wish to keep track of:
-        # for example:
-        '''
-        m_t = ...m... #do something with m and grad
-        v_t = ...v... # do something with v and grad
-        '''
-        start_t = math_ops.cast(self._start_t, var.dtype.base_dtype)
+        # Updates dummy weights during SGLD
+        # Reassign to original weights upon completion
+
         lr_prime_t = math_ops.cast(self._lr_prime_t, var.dtype.base_dtype)
         epsilon_t = math_ops.cast(self._epsilon_t, var.dtype.base_dtype)
         gamma_t = math_ops.cast(self._gamma_t, var.dtype.base_dtype)
@@ -87,17 +78,19 @@ class local_entropy_sgld(optimizer.Optimizer):
         xp = self.get_slot(var, 'xp')
         mu = self.get_slot(var, 'mu')
 
-        wc_t = tf.cond(start_t,
+        wc_t = tf.cond(tf.mod(self.sgld_global_step, self.L_t),
             lambda: wc.assign(var),
             lambda: wc)
 
         eta = tf.random_normal(shape=var.get_shape())
-        dx = grad - gamma_t*(wc-var)
-        update = -lr_prime_t*dx + tf.sqrt(lr_prime)*epsilon_t*eta
-        xp_t = xp.assign(var - update)
-        mu_t = mu.assign((1.0-alpha_t)*mu + alpha_t*(var-update))
+        eta_t = math_ops.cast(self.eta_t, var.dtype.base_dtype)
 
-        var_update = state_ops.assign_sub(var, update)
+        # update = -lr_prime_t*(grad-gamma_t*(wc-var)) + tf.sqrt(lr_prime)*epsilon_t*eta_t
+        xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime)*epsilon_t*eta_t)
+        mu_t = mu.assign((1.0-alpha_t)*mu + alpha_t*xp)
+
+        var_update = state_ops.assign_sub(var,
+            lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime)*epsilon_t*eta_t)
 
         return control_flow_ops.group(*[var_update, wc_t, xp_t, mu_t])
 

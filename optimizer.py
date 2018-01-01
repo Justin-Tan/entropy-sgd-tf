@@ -20,7 +20,7 @@ from config import config_train
 
 class EntropySGD(optimizer.Optimizer):
 
-    def __init__(self, iterator, training_phase, global_step, config={},
+    def __init__(self, iterator, training_phase, sgld_global_step, config={},
                  use_locking=False, name='EntropySGD'):
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
         defaults = dict(lr=1e-3, gamma=1e-3, momentum=0, damp=0, weight_decay=0,
@@ -34,7 +34,7 @@ class EntropySGD(optimizer.Optimizer):
         self.config = config
         self.iterator = iterator
         self.training_phase = training_phase
-        self.global_step = global_step
+        self.sgld_global_step = sgld_global_step
 
         self._learning_rate = config['lr']
         self._gamma = config['gamma']
@@ -50,8 +50,10 @@ class EntropySGD(optimizer.Optimizer):
         self._wd_tensor = None
         self._momentum_tensor = None
 
-        self.sgld_opt = local_entropy_sgld(eta_prime=lr_prime, epsilon=epsilon,
-            gamma=gamma, momentum=momentum, alpha=alpha)
+        self.sgld_opt = local_entropy_sgld(eta_prime=config['lr_prime'],
+            epsilon=config['epsilon'], gamma=self._gamma, alpha=config['alpha'],
+            momentum=config['momentum'], L=config['L'],
+            sgld_global_step=self.sgld_global_step)
 
     def _prepare(self):
         self._lr_tensor = ops.convert_to_tensor(self._learning_rate,
@@ -83,7 +85,7 @@ class EntropySGD(optimizer.Optimizer):
         self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels))
 
-        self.inner = self.sgld_opt.minimize(self.cost)
+        self.inner = self.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
 
 
     def _apply_dense(self, grad, var):
@@ -97,16 +99,14 @@ class EntropySGD(optimizer.Optimizer):
         alpha_t = math_ops.cast(self._alpha_tensor, var.dtype.base_dtype)
 
         mu = self.get_slot(var, 'mu')
-        # gs = self.get_slot(var 'gs')
-        # gamma = self.get_slot(var, 'gamma')
+        # mu_t = mu.assign((1-alpha_t)*mu + alpha_t*var)
 
         # gamma_t = g0_t*tf.pow(1.0+g1_t, tf.cast(self.global_step), tf.float32)
         # gamma_t = gamma.assign(g0_t*tf.pow((1+g1_t), self.global_step))
         # gs_t = gs.assign(gs+1)
-        mu_t = mu.assign((1-alpha_t)*mu + alpha_t*var)
 
-        # for l in range(L):
-        #     _langevin_ops()
+        for l in range(L):
+            _langevin_ops()
 
         # run L iterations of SGLD
         # for l in range(L):
@@ -115,11 +115,11 @@ class EntropySGD(optimizer.Optimizer):
         #     self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
         #         labels=self.labels))
         #     g, v = self.compute_gradients(self.cost, var_list=[var])
-        # mu_t = mu.assign(self.sgld_opt.get_slot(var, 'mu'))
 
+        mu_t = mu.assign(self.sgld_opt.get_slot(var, 'mu'))
         var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
 
-        return control_flow_ops.group(*[var_update, gamma_t, mu_t])
+        return control_flow_ops.group(*[var_update, mu_t])
 
     def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")
