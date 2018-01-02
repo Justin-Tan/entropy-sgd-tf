@@ -1,5 +1,5 @@
 # entropy-sgd-tf
-TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide valleys](https://arxiv.org/pdf/1611.01838.pdf). Entropy-SGD uses geometric information about the energy landscape to bias the optimization algorithm toward flat regions, which may aid generalization. Convergence when training on CIFAR-10, CIFAR-100 is compared with vanilla SGD, Adam and momentum-based optimizers.
+TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide valleys](https://arxiv.org/pdf/1611.01838.pdf). Entropy-SGD uses geometric information about the energy landscape to bias the optimization algorithm toward flat regions, which may aid generalization.
 
 ## Instructions
 The model should automatically download and process the CIFAR-10 dataset when first run.
@@ -12,7 +12,7 @@ $ python3 train.py -h
 $ python3 train.py <args>
 ```
 ## Results
-Both CIFAR-10/100 CNNs are trained with the same hyperparameters specified in the original paper.
+The CIFAR-10 model is trained with the same hyperparameters specified in the original paper. Hyperparameters for CIFAR-100 are optimized using Hyperband. Convergence when training on both datasets is compared with vanilla SGD, Adam and momentum-based optimizers.
 
 ### CIFAR-10
 ```
