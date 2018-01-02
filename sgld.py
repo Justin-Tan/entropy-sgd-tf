@@ -78,19 +78,19 @@ class local_entropy_sgld(optimizer.Optimizer):
         xp = self.get_slot(var, 'xp')
         mu = self.get_slot(var, 'mu')
 
-        wc_t = tf.cond(tf.mod(self.sgld_global_step, self.L_t),
+        wc_t = tf.cond(tf.logical_not(tf.cast(tf.mod(self.sgld_global_step, self._L_t), tf.bool)),
             lambda: wc.assign(var),
             lambda: wc)
 
         eta = tf.random_normal(shape=var.get_shape())
-        eta_t = math_ops.cast(self.eta_t, var.dtype.base_dtype)
+        eta_t = math_ops.cast(eta, var.dtype.base_dtype)
 
         # update = -lr_prime_t*(grad-gamma_t*(wc-var)) + tf.sqrt(lr_prime)*epsilon_t*eta_t
-        xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime)*epsilon_t*eta_t)
+        xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
         mu_t = mu.assign((1.0-alpha_t)*mu + alpha_t*xp)
 
         var_update = state_ops.assign_sub(var,
-            lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime)*epsilon_t*eta_t)
+            lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
 
         return control_flow_ops.group(*[var_update, wc_t, xp_t, mu_t])
 

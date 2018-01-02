@@ -15,6 +15,7 @@ from tensorflow.python.training import training_ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import state_ops
 
+from network import Network
 from sgld import local_entropy_sgld
 from config import config_train
 
@@ -24,7 +25,7 @@ class EntropySGD(optimizer.Optimizer):
                  use_locking=False, name='EntropySGD'):
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
         defaults = dict(lr=1e-3, gamma=1e-3, momentum=0, damp=0, weight_decay=0,
-                        nesterov=True, L=0, eps=1e-4, g0=3e-2, g1=1e-3,
+                        nesterov=True, L=2, epsilon=1e-4, g0=3e-2, g1=1e-3,
                         alpha=0.75, lr_prime=0.1)
         for k in defaults:
             if config.get(k, None) is None:
@@ -62,7 +63,7 @@ class EntropySGD(optimizer.Optimizer):
                                                    name="gamma")
         self._lr_prime_tensor = ops.convert_to_tensor(self.config['lr_prime'],
                                                       name="learning_rate_prime")
-        self._epsilon_tensor = ops.convert_to_tensor(self.config['eps'],
+        self._epsilon_tensor = ops.convert_to_tensor(self.config['epsilon'],
                                                      name="epsilon")
         self._g0_tensor = ops.convert_to_tensor(self.config['g0'], name="gamma_0")
         self._g1_tensor = ops.convert_to_tensor(self.config['g1'], name="gamma_1")
@@ -79,9 +80,9 @@ class EntropySGD(optimizer.Optimizer):
         for v in var_list:
             mu = self._zeros_slot(v, "mu", self._name)
 
-    def _langevin_ops(self):
+    def _langevin_ops(self, l):
         self.example, self.labels = self.iterator.get_next()
-        self.logits = Network.cnn(self.example, config_train, self.training_phase)
+        self.logits = Network.cnn(self.example, config_train, self.training_phase, reuse=True)
         self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels))
 
@@ -105,8 +106,9 @@ class EntropySGD(optimizer.Optimizer):
         # gamma_t = gamma.assign(g0_t*tf.pow((1+g1_t), self.global_step))
         # gs_t = gs.assign(gs+1)
 
-        for l in range(L):
-            _langevin_ops()
+        for l in range(self.config['L']):
+        #    print(l)
+            self._langevin_ops(l)
 
         # run L iterations of SGLD
         # for l in range(L):
@@ -116,6 +118,8 @@ class EntropySGD(optimizer.Optimizer):
         #         labels=self.labels))
         #     g, v = self.compute_gradients(self.cost, var_list=[var])
 
+        #print(self.sgld_opt.get_slot_names())
+        #print(var)
         mu_t = mu.assign(self.sgld_opt.get_slot(var, 'mu'))
         var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
 
