@@ -60,6 +60,12 @@ _CLASS_NAMES = [
     'truck',
 ]
 
+FLAGS = tf.app.flags.FLAGS
+
+tf.app.flags.DEFINE_string(
+    'dataset_dir',
+    None,
+    'The directory where the output TFRecords and temporary files are saved.')
 
 def _add_to_tfrecord(filename, tfrecord_writer, offset=0):
   """Loads data from the cifar10 pickle files and writes files to a TFRecord.
@@ -197,3 +203,13 @@ def run(dataset_dir):
   _clean_up_temporary_files(dataset_dir)
   print('\nFinished converting the Cifar10 dataset!')
 
+
+
+def main(_):
+  if not FLAGS.dataset_dir:
+    raise ValueError('You must supply the dataset directory with --dataset_dir')
+
+  run(FLAGS.dataset_dir)
+
+if __name__ == '__main__':
+  tf.app.run()

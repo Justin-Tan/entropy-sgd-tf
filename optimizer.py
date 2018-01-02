@@ -23,6 +23,7 @@ class EntropySGD(optimizer.Optimizer):
 
     def __init__(self, iterator, training_phase, sgld_global_step, config={},
                  use_locking=False, name='EntropySGD'):
+
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
         defaults = dict(lr=1e-3, gamma=1e-3, momentum=0, damp=0, weight_decay=0,
                         nesterov=True, L=2, epsilon=1e-4, g0=3e-2, g1=1e-3,
@@ -43,11 +44,6 @@ class EntropySGD(optimizer.Optimizer):
         # Scalar parameter tensors
         self._lr_tensor = None
         self._gamma_tensor = None
-        self._lr_prime_tensor = None
-        self._epsilon_tensor = None
-        self._g0_tensor = None
-        self._g1_tensor = None
-        self._alpha_tensor = None
         self._wd_tensor = None
         self._momentum_tensor = None
 
@@ -61,14 +57,6 @@ class EntropySGD(optimizer.Optimizer):
                                                 name="learning_rate")
         self._gamma_tensor = ops.convert_to_tensor(self._gamma,
                                                    name="gamma")
-        self._lr_prime_tensor = ops.convert_to_tensor(self.config['lr_prime'],
-                                                      name="learning_rate_prime")
-        self._epsilon_tensor = ops.convert_to_tensor(self.config['epsilon'],
-                                                     name="epsilon")
-        self._g0_tensor = ops.convert_to_tensor(self.config['g0'], name="gamma_0")
-        self._g1_tensor = ops.convert_to_tensor(self.config['g1'], name="gamma_1")
-        self._alpha_tensor = ops.convert_to_tensor(self.config['alpha'],
-                                                   name="alpha")
         self._wd_tensor = ops.convert_to_tensor(self.config['weight_decay'],
                                                    name="decay")
         self._momentum_tensor = ops.convert_to_tensor(self.config['momentum'],
@@ -78,52 +66,28 @@ class EntropySGD(optimizer.Optimizer):
         # Manage variables that accumulate updates
         # Creates slots for x', the expectation μ = <x'> and current weights
         for v in var_list:
+            wc = self._zeros_slot(v, "wc", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
-
-    def _langevin_ops(self, l):
-        self.example, self.labels = self.iterator.get_next()
-        self.logits = Network.cnn(self.example, config_train, self.training_phase, reuse=True)
-        self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
-            labels=self.labels))
-
-        self.inner = self.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
 
 
     def _apply_dense(self, grad, var):
         # Apply weight updates
         lr_t = math_ops.cast(self._lr_tensor, var.dtype.base_dtype)
         gamma_t = math_ops.cast(self._gamma_tensor, var.dtype.base_dtype)
-        lr_prime_t = math_ops.cast(self._lr_prime_tensor, var.dtype.base_dtype)
-        eps_t = math_ops.cast(self._epsilon_tensor, var.dtype.base_dtype)
-        g0_t = math_ops.cast(self._g0_tensor, var.dtype.base_dtype)
-        g1_t = math_ops.cast(self._g1_tensor, var.dtype.base_dtype)
-        alpha_t = math_ops.cast(self._alpha_tensor, var.dtype.base_dtype)
 
-        mu = self.get_slot(var, 'mu')
-        # mu_t = mu.assign((1-alpha_t)*mu + alpha_t*var)
+        wc = self.get_slot(var, "wc")
+        mu = self.get_slot(var, "mu")
 
-        # gamma_t = g0_t*tf.pow(1.0+g1_t, tf.cast(self.global_step), tf.float32)
-        # gamma_t = gamma.assign(g0_t*tf.pow((1+g1_t), self.global_step))
-        # gs_t = gs.assign(gs+1)
+        wc_t = wc.assign(self.sgld_opt.get_slot(var, "wc"))
+        mu_t = mu.assign(self.sgld_opt.get_slot(var, "mu"))
 
-        for l in range(self.config['L']):
-        #    print(l)
-            self._langevin_ops(l)
+        # Reset weights to pre-SGLD state, then execute update
+        var_reset = state_ops.assign(var, wc_t)
 
-        # run L iterations of SGLD
-        # for l in range(L):
-        #     self.example, self.labels = self.iterator.get_next()
-        #     self.logits = Network.cnn(self.example, config_train, self.training_phase)
-        #     self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
-        #         labels=self.labels))
-        #     g, v = self.compute_gradients(self.cost, var_list=[var])
+        with tf.control_dependencies([var_reset]):
+            var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
 
-        #print(self.sgld_opt.get_slot_names())
-        #print(var)
-        mu_t = mu.assign(self.sgld_opt.get_slot(var, 'mu'))
-        var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
-
-        return control_flow_ops.group(*[var_update, mu_t])
+        return control_flow_ops.group(*[var_update, mu_t, wc_t])
 
     def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")

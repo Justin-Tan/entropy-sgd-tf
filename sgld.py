@@ -20,7 +20,7 @@ class local_entropy_sgld(optimizer.Optimizer):
 
     def __init__(self, eta_prime, epsilon, gamma, alpha, momentum, L,
                  sgld_global_step, use_locking=False, name='le_sgld'):
-        # Inner loop Langevin dynamics
+        # Run inner loop Langevin dynamics
         super(local_entropy_sgld, self).__init__(use_locking, name)
 
         self._lr_prime = eta_prime
@@ -66,8 +66,7 @@ class local_entropy_sgld(optimizer.Optimizer):
 
     def _apply_dense(self, grad, var):
         # Updates dummy weights during SGLD
-        # Reassign to original weights upon completion
-
+        # Reassign to original weights upon completion of inner loop
         lr_prime_t = math_ops.cast(self._lr_prime_t, var.dtype.base_dtype)
         epsilon_t = math_ops.cast(self._epsilon_t, var.dtype.base_dtype)
         gamma_t = math_ops.cast(self._gamma_t, var.dtype.base_dtype)

@@ -48,6 +48,11 @@ def train(config, architecture, restore=False, restore_path=None):
             v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, start_time, v_acc_best, epoch)
             while True:
                 try:
+                    # Run SGLD iterations
+                    for l in range(config.L):
+                        sess.run([cnn.sgld_op], feed_dict={cnn.training_phase: True, cnn.handle: train_handle})
+
+                    # Update weights
                     sess.run([cnn.train_op, cnn.update_accuracy], feed_dict={cnn.training_phase: True,
                         cnn.handle: train_handle})
 
@@ -75,10 +80,11 @@ def main(**kwargs):
     args = parser.parse_args()
     config=config_train
 
-    architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | Epochs: {}'.format(
+    architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | SGLD Iterations {} | Epochs: {}'.format(
                     config.n_layers,
                     config.conv_keep_prob,
                     config.learning_rate,
+                    config.L,
                     config.num_epochs
     )
     # Launch training

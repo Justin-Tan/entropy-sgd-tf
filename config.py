@@ -14,6 +14,8 @@ class config_test(object):
     im_y = 32
     g0 = 1e-2
     g1 = 1e-3
+    L = 5
+    lr_decay_rate = 2e-5
 
 class config_train(object):
     mode = 'beta'
@@ -29,6 +31,8 @@ class config_train(object):
     im_y = 32
     g0 = 1e-2
     g1 = 1e-3
+    L = 5
+    lr_decay_rate = 2e-5
 
 class directories(object):
     train = 'tfrecords/cifar10/cifar10_train.tfrecord'

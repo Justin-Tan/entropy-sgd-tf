@@ -2,14 +2,17 @@
 import tensorflow as tf
 import numpy as np
 import glob, time, os
+
 from network import Network
 from data import Data
 from optimizer import EntropySGD
+from sgld import local_entropy_sgld
 
 class Model():
     def __init__(self, config, directories, single_infer=False):
         # Build the computational graph
         self.global_step = tf.Variable(0, trainable=False)
+        self.sgld_global_step = tf.Variable(0, trainable=False)
         self.handle = tf.placeholder(tf.string, shape=[])
         self.training_phase = tf.placeholder(tf.bool)
 
@@ -46,7 +49,7 @@ class Model():
         self.cost = tf.reduce_mean(self.cross_entropy)
 
         learning_rate = tf.train.natural_exp_decay(config.learning_rate,
-            self.global_step, decay_steps=1, decay_rate=0.001)
+            self.global_step, decay_steps=1, decay_rate=config.lr_decay_rate)
 
         # Exponential scoping
         # gamma = config.g0*tf.pow(1.0+config.g1, tf.cast(self.global_step), tf.float32)
@@ -56,8 +59,11 @@ class Model():
         with tf.control_dependencies(update_ops):
             # Ensures that we execute the update_ops before performing the train_step
             # self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
-            opt = EntropySGD(self.iterator, self.training_phase, self.global_step,
+
+            opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
                 config={'lr':learning_rate, 'gamma':gamma, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
+
+            self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
             self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=config.ema_decay, num_updates=self.global_step)
