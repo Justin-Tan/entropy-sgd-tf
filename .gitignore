@@ -12,6 +12,8 @@ __pycache__/
 
 # checkpoints
 checkpoints/*
+!checkpoints/.gitkeep
+!checkpoints/best/.gitkeep
 
 # Distribution / packaging
 .Python
