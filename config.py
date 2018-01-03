@@ -14,7 +14,7 @@ class config_test(object):
     im_y = 32
     g0 = 1e-2
     g1 = 1e-3
-    L = 5
+    L = 10
     lr_decay_rate = 2e-5
 
 class config_train(object):
@@ -25,13 +25,13 @@ class config_train(object):
     ema_decay = 0.999
     learning_rate = 8e-5
     n_classes = 10
-    conv_keep_prob = 0.75
-    dense_keep_prob = 0.75
+    conv_keep_prob = 0.7
+    dense_keep_prob = 0.7
     im_x = 32
     im_y = 32
     g0 = 1e-2
     g1 = 1e-3
-    L = 5
+    L = 10
     lr_decay_rate = 2e-5
 
 class directories(object):

@@ -44,7 +44,6 @@ class EntropySGD(optimizer.Optimizer):
         # Scalar parameter tensors
         self._lr_tensor = None
         self._gamma_tensor = None
-        self._wd_tensor = None
         self._momentum_tensor = None
 
         self.sgld_opt = local_entropy_sgld(eta_prime=config['lr_prime'],
@@ -57,8 +56,6 @@ class EntropySGD(optimizer.Optimizer):
                                                 name="learning_rate")
         self._gamma_tensor = ops.convert_to_tensor(self._gamma,
                                                    name="gamma")
-        self._wd_tensor = ops.convert_to_tensor(self.config['weight_decay'],
-                                                   name="decay")
         self._momentum_tensor = ops.convert_to_tensor(self.config['momentum'],
                                                       name="momentum")
 
@@ -68,7 +65,6 @@ class EntropySGD(optimizer.Optimizer):
         for v in var_list:
             wc = self._zeros_slot(v, "wc", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
-
 
     def _apply_dense(self, grad, var):
         # Apply weight updates
@@ -85,7 +81,8 @@ class EntropySGD(optimizer.Optimizer):
         var_reset = state_ops.assign(var, wc_t)
 
         with tf.control_dependencies([var_reset]):
-            var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
+            # var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
+            var_update = state_ops.assign_sub(var, lr_t*(var-mu_t))
 
         return control_flow_ops.group(*[var_update, mu_t, wc_t])
 

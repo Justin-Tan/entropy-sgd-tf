@@ -9,7 +9,7 @@ from optimizer import EntropySGD
 from sgld import local_entropy_sgld
 
 class Model():
-    def __init__(self, config, directories, single_infer=False):
+    def __init__(self, config, directories, single_infer=False, optimizer='entropy-SGD'):
         # Build the computational graph
         self.global_step = tf.Variable(0, trainable=False)
         self.sgld_global_step = tf.Variable(0, trainable=False)
@@ -39,7 +39,7 @@ class Model():
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        self.logits = Network.cnn(self.example, config, self.training_phase)
+        self.logits = Network.wrn(self.example, config, self.training_phase)
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
 
@@ -58,13 +58,13 @@ class Model():
 
         with tf.control_dependencies(update_ops):
             # Ensures that we execute the update_ops before performing the train_step
-            # self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
-
-            opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
-                config={'lr':learning_rate, 'gamma':gamma, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
-
-            self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
-            self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
+            if optimizer=='entropy-SGD':
+                opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
+                    config={'lr':learning_rate, 'gamma':gamma, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
+                self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
+                self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
+            elif optimizer=='Adam':
+                self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=config.ema_decay, num_updates=self.global_step)
         maintain_averages_op = self.ema.apply(tf.trainable_variables())
@@ -80,6 +80,8 @@ class Model():
         tf.summary.scalar('learning_rate', learning_rate)
         tf.summary.scalar('gamma', gamma)
         tf.summary.scalar('cost', self.cost)
+        tf.summary.scalar('global_step', self.global_step)
+        tf.summary.scalar('sgld_global_step', self.sgld_global_step)
         tf.summary.image('images', self.example, max_outputs=8)
         self.merge_op = tf.summary.merge_all()
 
