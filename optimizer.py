@@ -26,8 +26,7 @@ class EntropySGD(optimizer.Optimizer):
 
         # Construct entropy-sgd optimizer - ref. arXiv 1611.01838
         defaults = dict(lr=1e-3, gamma=1e-3, momentum=0, damp=0, weight_decay=0,
-                        nesterov=True, L=2, epsilon=1e-4, g0=3e-2, g1=1e-3,
-                        alpha=0.75, lr_prime=0.1)
+                        nesterov=True, L=5, epsilon=1e-4, alpha=0.75, lr_prime=0.1)
         for k in defaults:
             if config.get(k, None) is None:
                 config[k] = defaults[k]

@@ -7,6 +7,7 @@ from network import Network
 from data import Data
 from optimizer import EntropySGD
 from sgld import local_entropy_sgld
+from graphdef import ResNet
 
 class Model():
     def __init__(self, config, directories, single_infer=False, optimizer='entropy-SGD'):
@@ -18,7 +19,7 @@ class Model():
 
         train_dataset = Data.load_dataset(directories.train,
                                           config.batch_size,
-                                          augment=False)
+                                          augment=True)
         test_dataset = Data.load_dataset(directories.test,
                                          config.batch_size,
                                          augment=False,
@@ -33,13 +34,17 @@ class Model():
         self.test_iterator = test_dataset.make_initializable_iterator()
         self.val_iterator = val_dataset.make_initializable_iterator()
 
-        self.example, self.labels = self.iterator.get_next()
+        with tf.device('/cpu:0'):
+            self.example, self.labels = self.iterator.get_next()
 
         if single_infer:
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        self.logits = Network.wrn(self.example, config, self.training_phase)
+        # self.logits = Network.wrn(self.example, config, self.training_phase)
+        graph = ResNet(config, self.training_phase)
+        self.logits = graph.wrn(self.example)
+
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
 
@@ -47,6 +52,7 @@ class Model():
         self.cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
+        self.cost += graph.weight_decay()
 
         learning_rate = tf.train.natural_exp_decay(config.learning_rate,
             self.global_step, decay_steps=1, decay_rate=config.lr_decay_rate)
@@ -60,11 +66,16 @@ class Model():
             # Ensures that we execute the update_ops before performing the train_step
             if optimizer=='entropy-SGD':
                 opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
-                    config={'lr':learning_rate, 'gamma':gamma, 'g0':0.03, 'g1':1e-3, 'lr_prime':0.1})
+                    config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.1})
                 self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
                 self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
-            elif optimizer=='Adam':
-                self.opt_op = tf.train.AdamOptimizer(beta).minimize(self.cost, global_step=self.global_step)
+            elif optimizer=='adam':
+                self.opt_op = tf.train.AdamOptimizer(learning_rate).minimize(self.cost, global_step=self.global_step)
+            elif optimizer=='momentum':
+                self.opt_op = tf.train.MomentumOptimizer(learning_rate, config.momentum, use_nesterov=True)
+            elif optimizer=='sgd':
+                self.opt_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.cost,
+                    global_step=self.global_step)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=config.ema_decay, num_updates=self.global_step)
         maintain_averages_op = self.ema.apply(tf.trainable_variables())

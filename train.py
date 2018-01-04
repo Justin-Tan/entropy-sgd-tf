@@ -14,7 +14,7 @@ from config import config_train, directories
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-def train(config, architecture, restore=False, restore_path=None):
+def train(config, architecture, args):
     print('Architecture: {}'.format(architecture))
     start_time = time.time()
     global_step, n_checkpoints, v_acc_best = 0, 0, 0.
@@ -30,15 +30,15 @@ def train(config, architecture, restore=False, restore_path=None):
         train_handle = sess.run(cnn.train_iterator.string_handle())
         test_handle = sess.run(cnn.test_iterator.string_handle())
 
-        if restore and ckpt.model_checkpoint_path:
+        if args.restore_last and ckpt.model_checkpoint_path:
             # Continue training saved model
             saver.restore(sess, ckpt.model_checkpoint_path)
             print('{} restored.'.format(ckpt.model_checkpoint_path))
         else:
-            if restore_path:
-                new_saver = tf.train.import_meta_graph('{}.meta'.format(restore_path))
-                new_saver.restore(sess, restore_path)
-                print('{} restored.'.format(restore_path))
+            if args.restore_path:
+                new_saver = tf.train.import_meta_graph('{}.meta'.format(args.restore_path))
+                new_saver.restore(sess, args.restore_path)
+                print('{} restored.'.format(args.restore_path))
 
         sess.run(cnn.test_iterator.initializer)
 
@@ -76,19 +76,22 @@ def train(config, architecture, restore=False, restore_path=None):
 def main(**kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument("-rl", "--restore_last", help="restore last saved model", action="store_true")
-    parser.add_argument("-r", "--restore", help="path to model to be restored")
+    parser.add_argument("-r", "--restore_path", help="path to model to be restored")
+    # parser.add_argument("-opt", "--optimizer", nargs="?", const="entropy-sgd", help="Selected optimizer")
+    parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer")
     args = parser.parse_args()
     config=config_train
 
-    architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | SGLD Iterations {} | Epochs: {}'.format(
+    architecture = 'Layers: {} | Conv dropout: {} | Base LR: {} | SGLD Iterations {} | Epochs: {} | Optimizer: {}'.format(
                     config.n_layers,
                     config.conv_keep_prob,
                     config.learning_rate,
                     config.L,
-                    config.num_epochs
+                    config.num_epochs,
+                    args.optimizer
     )
     # Launch training
-    train(config_train, architecture, restore=args.restore_last, restore_path=args.restore)
+    train(config_train, architecture, args)
 
 if __name__ == '__main__':
     main()

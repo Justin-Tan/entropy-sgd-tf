@@ -6,7 +6,7 @@ class config_test(object):
     num_epochs = 512
     batch_size = 256
     ema_decay = 0.999
-    learning_rate = 8e-5
+    learning_rate = 8e-4
     n_classes = 10
     conv_keep_prob = 1.0
     dense_keep_prob = 1.0
@@ -23,7 +23,7 @@ class config_train(object):
     num_epochs = 512
     batch_size = 256
     ema_decay = 0.999
-    learning_rate = 8e-5
+    learning_rate = 8e-3
     n_classes = 10
     conv_keep_prob = 0.7
     dense_keep_prob = 0.7
@@ -31,12 +31,14 @@ class config_train(object):
     im_y = 32
     g0 = 1e-2
     g1 = 1e-3
-    L = 10
+    L = 20
     lr_decay_rate = 2e-5
+    momentum = 0.9
+    weight_decay = 5e-4
 
 class directories(object):
-    train = 'tfrecords/cifar10/cifar10_train.tfrecord'
-    test = 'tfrecords/cifar10/cifar10_test.tfrecord'
+    train = 'tfrecords/cifar10/cifar10_train.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_train.tfrecord'
+    test = 'tfrecords/cifar10/cifar10_test.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_test.tfrecord'
     tensorboard = 'tensorboard'
     checkpoints = 'checkpoints'
     checkpoints_best = 'checkpoints/best'
