@@ -181,3 +181,155 @@ class Network(object):
 
         return cnn_out
 
+    @staticmethod
+    def cnn_elu(x, config, training, reuse=False, actv=tf.nn.elu):
+        # CIFAR architecture used in arXiv 1511.07289
+        init = tf.contrib.layers.xavier_initializer()
+        filters = [384, 384, 384, 640, 640, 640, 768, 768, 768, 768, 896, 896,
+            896, 1024, 1024, 1024, 1152, 1152, 128]
+        dropout = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.0]
+        with tf.variable_scope('conv', reuse=reuse):
+            # x = tf.reshape(x, shape=[-1, config.im_x, config.im_y, 1])
+            # Convolutional blocks -------------------------------------------->
+            with tf.variable_scope('conv0', reuse=reuse):
+                conv = tf.layers.conv2d(x, filters=filters[0], kernel_size=[3,3], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                # pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden0 = tf.layers.dropout(conv, rate=dropout[0], training=training)
+
+            with tf.variable_scope('conv1', reuse=reuse):
+                conv = tf.layers.conv2d(hidden0, filters=filters[1], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[2], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[3], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[4], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden1 = tf.layers.dropout(pool, rate=dropout[1], training=training)
+
+            with tf.variable_scope('conv2', reuse=reuse):
+                conv = tf.layers.conv2d(hidden1, filters=filters[5], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[6], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[7], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[8], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden2 = tf.layers.dropout(pool, rate=dropout[2], training=training)
+
+            with tf.variable_scope('conv3', reuse=reuse):
+                conv = tf.layers.conv2d(hidden2, filters=filters[9], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[10], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[11], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden3 = tf.layers.dropout(pool, rate=dropout[3], training=training)
+
+            with tf.variable_scope('conv4', reuse=reuse):
+                conv = tf.layers.conv2d(hidden3, filters=filters[12], kernel_size=[3,3], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[13], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[14], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden4 = tf.layers.dropout(pool, rate=dropout[4], training=training)
+
+            with tf.variable_scope('conv5', reuse=reuse):
+                conv = tf.layers.conv2d(hidden4, filters=filters[15], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[16], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden5 = tf.layers.dropout(pool, rate=dropout[5], training=training)
+
+            with tf.variable_scope('conv6', reuse=reuse):
+                conv = tf.layers.conv2d(hidden5, filters=filters[17], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[18], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                # pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden6 = tf.layers.dropout(conv, rate=dropout[6], training=training)
+
+            with tf.variable_scope('fc1', reuse=reuse):
+                flatten = tf.contrib.layers.flatten(hidden6)
+                fc = tf.layers.dense(flatten, units=128, kernel_initializer=init, activation=actv)
+                fc = tf.layers.dropout(fc, rate=dropout[6], training=training)
+
+            with tf.variable_scope('output', reuse=reuse):
+                cnn_out = tf.layers.dense(fc, units=config.n_classes, kernel_initializer=init)
+
+        return cnn_out
+
+    @staticmethod
+    def cnn_elu_small(x, config, training, reuse=False, actv=tf.nn.elu):
+        # CIFAR architecture used in arXiv 1511.07289
+        init = tf.contrib.layers.xavier_initializer()
+        filters = [192, 192, 220, 240, 240, 256, 256, 280, 280, 512, 512, 128]
+        dropout = [0.0, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+        with tf.variable_scope('conv', reuse=reuse):
+            # x = tf.reshape(x, shape=[-1, config.im_x, config.im_y, 1])
+            # Convolutional blocks -------------------------------------------->
+            with tf.variable_scope('conv0', reuse=reuse):
+                conv = tf.layers.conv2d(x, filters=filters[0], kernel_size=[3,3], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                # pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden0 = tf.layers.dropout(conv, rate=dropout[0], training=training)
+
+            with tf.variable_scope('conv1', reuse=reuse):
+                conv = tf.layers.conv2d(hidden0, filters=filters[1], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[2], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[3], kernel_size=[3,3], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden1 = tf.layers.dropout(pool, rate=dropout[1], training=training)
+
+            with tf.variable_scope('conv2', reuse=reuse):
+                conv = tf.layers.conv2d(hidden1, filters=filters[4], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[5], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden2 = tf.layers.dropout(pool, rate=dropout[2], training=training)
+
+            with tf.variable_scope('conv3', reuse=reuse):
+                conv = tf.layers.conv2d(hidden2, filters=filters[6], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[7], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden3 = tf.layers.dropout(pool, rate=dropout[3], training=training)
+
+            with tf.variable_scope('conv4', reuse=reuse):
+                conv = tf.layers.conv2d(hidden3, filters=filters[8], kernel_size=[3,3], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[9], kernel_size=[2,2], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden4 = tf.layers.dropout(pool, rate=dropout[4], training=training)
+
+            with tf.variable_scope('conv5', reuse=reuse):
+                conv = tf.layers.conv2d(hidden4, filters=filters[10], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                conv = tf.layers.conv2d(conv, filters=filters[11], kernel_size=[1,1], activation=actv,
+                                        kernel_initializer=init, padding='same')
+                pool = tf.layers.max_pooling2d(conv, pool_size=[2, 2], strides=2, padding='valid')
+                hidden5 = tf.layers.dropout(conv, rate=dropout[5], training=training)
+
+            with tf.variable_scope('fc1', reuse=reuse):
+                flatten = tf.contrib.layers.flatten(hidden5)
+                fc = tf.layers.dense(flatten, units=128, kernel_initializer=init, activation=actv)
+                fc = tf.layers.dropout(fc, rate=dropout[6], training=training)
+
+            with tf.variable_scope('output', reuse=reuse):
+                cnn_out = tf.layers.dense(fc, units=config.n_classes, kernel_initializer=init)
+
+        return cnn_out

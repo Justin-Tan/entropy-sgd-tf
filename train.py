@@ -15,13 +15,14 @@ from config import config_train, directories
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 def train(config, architecture, args):
+
     print('Architecture: {}'.format(architecture))
     start_time = time.time()
     global_step, n_checkpoints, v_acc_best = 0, 0, 0.
     ckpt = tf.train.get_checkpoint_state(directories.checkpoints)
 
     # Build graph
-    cnn = Model(config_train, directories)
+    cnn = Model(config_train, directories, name=args.name, optimizer=args.optimizer)
     saver = tf.train.Saver()
 
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
@@ -49,8 +50,9 @@ def train(config, architecture, args):
             while True:
                 try:
                     # Run SGLD iterations
-                    for l in range(config.L):
-                        sess.run([cnn.sgld_op], feed_dict={cnn.training_phase: True, cnn.handle: train_handle})
+                    # if optimizer=='entropy-sgd':
+                    # for l in range(config.L):
+                    #    sess.run([cnn.sgld_op], feed_dict={cnn.training_phase: True, cnn.handle: train_handle})
 
                     # Update weights
                     sess.run([cnn.train_op, cnn.update_accuracy], feed_dict={cnn.training_phase: True,
@@ -79,6 +81,7 @@ def main(**kwargs):
     parser.add_argument("-r", "--restore_path", help="path to model to be restored")
     # parser.add_argument("-opt", "--optimizer", nargs="?", const="entropy-sgd", help="Selected optimizer")
     parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer")
+    parser.add_argument("-n", "--name", help="Name of Tensorboard records")
     args = parser.parse_args()
     config=config_train
 

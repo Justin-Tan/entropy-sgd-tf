@@ -23,7 +23,7 @@ class config_train(object):
     num_epochs = 512
     batch_size = 256
     ema_decay = 0.999
-    learning_rate = 8e-3
+    learning_rate = 1e-3
     n_classes = 10
     conv_keep_prob = 0.7
     dense_keep_prob = 0.7

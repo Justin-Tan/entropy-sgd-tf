@@ -10,8 +10,10 @@ from sgld import local_entropy_sgld
 from graphdef import ResNet
 
 class Model():
-    def __init__(self, config, directories, single_infer=False, optimizer='entropy-SGD'):
+    def __init__(self, config, directories, single_infer=False, name='', optimizer='entropy-sgd'):
         # Build the computational graph
+
+        print('Using optimizer: {}'.format(optimizer))
         self.global_step = tf.Variable(0, trainable=False)
         self.sgld_global_step = tf.Variable(0, trainable=False)
         self.handle = tf.placeholder(tf.string, shape=[])
@@ -41,9 +43,9 @@ class Model():
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        # self.logits = Network.wrn(self.example, config, self.training_phase)
+        self.logits = Network.cnn_elu(self.example, config, self.training_phase)
         graph = ResNet(config, self.training_phase)
-        self.logits = graph.wrn(self.example)
+        # self.logits = graph.wrn(self.example)
 
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
@@ -52,7 +54,7 @@ class Model():
         self.cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
-        self.cost += graph.weight_decay()
+        self.cost += graph.weight_decay(var_label='kernel')
 
         learning_rate = tf.train.natural_exp_decay(config.learning_rate,
             self.global_step, decay_steps=1, decay_rate=config.lr_decay_rate)
@@ -64,7 +66,7 @@ class Model():
 
         with tf.control_dependencies(update_ops):
             # Ensures that we execute the update_ops before performing the train_step
-            if optimizer=='entropy-SGD':
+            if optimizer=='entropy-sgd':
                 opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
                     config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.1})
                 self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
@@ -72,7 +74,8 @@ class Model():
             elif optimizer=='adam':
                 self.opt_op = tf.train.AdamOptimizer(learning_rate).minimize(self.cost, global_step=self.global_step)
             elif optimizer=='momentum':
-                self.opt_op = tf.train.MomentumOptimizer(learning_rate, config.momentum, use_nesterov=True)
+                self.opt_op = tf.train.MomentumOptimizer(learning_rate, config.momentum,
+                    use_nesterov=True).minimize(self.cost, global_step=self.global_step)
             elif optimizer=='sgd':
                 self.opt_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.cost,
                     global_step=self.global_step)
@@ -96,7 +99,8 @@ class Model():
         tf.summary.image('images', self.example, max_outputs=8)
         self.merge_op = tf.summary.merge_all()
 
+        name = 'tb' if not name else name
         self.train_writer = tf.summary.FileWriter(
-            os.path.join(directories.tensorboard, 'train_{}'.format(time.strftime('%d-%m_%I:%M'))), graph = tf.get_default_graph())
+            os.path.join(directories.tensorboard, '{}_train_{}'.format(name, time.strftime('%d-%m_%I:%M'))), graph=tf.get_default_graph())
         self.test_writer = tf.summary.FileWriter(
-            os.path.join(directories.tensorboard, 'test_{}'.format(time.strftime('%d-%m_%I:%M'))))
+            os.path.join(directories.tensorboard, '{}_test_{}'.format(name, time.strftime('%d-%m_%I:%M'))))

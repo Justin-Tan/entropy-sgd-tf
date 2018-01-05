@@ -150,13 +150,12 @@ class ResNet(object):
     tf.logging.debug('image after unit %s', x.get_shape())
     return x
 
-  def weight_decay(self):
+  def weight_decay(self, var_label='DW'):
     """L2 weight decay loss."""
     costs = []
     for var in tf.trainable_variables():
-      if var.op.name.find(r'DW') > 0:
+      if var.op.name.find(r'{}'.format(var_label)) > 0:
         costs.append(tf.nn.l2_loss(var))
-        # tf.summary.histogram(var.op.name, var)
 
     return tf.multiply(self.config.weight_decay, tf.add_n(costs))
 
