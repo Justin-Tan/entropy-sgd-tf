@@ -3,15 +3,25 @@
 import tensorflow as tf
 import os, time
 from tensorflow.python.client import device_lib
-from datasets import dl_cifar10, dlcifar100
+from tfrecords import dl_cifar10, dl_cifar100
 
-class Diagnostics(object, dataset_name):
+class Diagnostics(object):
     
     @staticmethod
-    def setup_ckpts():
+    def setup_dataset(name):
         if not os.path.isdir('checkpoints'):
             os.mkdir('checkpoints')
             os.mkdir('checkpoints/best')
+        
+        assert name in ['cifar10', 'cifar100'], 'Dataset name should be one of (cifar10, cifar100).'
+        train_dataset = 'tfrecords/{}/{}_test.tfrecord'.format(name, name)
+        test_dataset = 'tfrecords/{}/{}_test.tfrecord'.format(name, name)
+
+        if not (os.path.isfile(train_dataset) and os.path.isfile(test_dataset)):
+            if name=='cifar10':
+                dl_cifar10.run('tfrecords/cifar10')
+            elif name=='cifar100':
+                dl_cifar100.run('tfrecords/cifar100')
 
     @staticmethod
     def get_available_gpus():

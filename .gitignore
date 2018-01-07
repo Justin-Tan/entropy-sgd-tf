@@ -9,6 +9,7 @@ __pycache__/
 
 # dataset
 *.tfrecord
+*.gz
 
 # checkpoints
 checkpoints/*

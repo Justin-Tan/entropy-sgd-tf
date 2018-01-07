@@ -12,6 +12,7 @@ class Network(object):
         # See Arxiv 1605.07146
         network_width = 10 # k
         block_multiplicity = 4 # n
+
         filters = [16, 16, 32, 64]
         init = tf.contrib.layers.xavier_initializer()
         kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}

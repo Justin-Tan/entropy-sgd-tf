@@ -48,8 +48,8 @@ class Data(object):
 
         def _augment(image):
             # On-the-fly data augmentation
-            # image = tf.image.random_brightness(image, max_delta=0.1)
-            # image = tf.image.random_contrast(image, 0.5, 1.5)
+            image = tf.image.random_brightness(image, max_delta=0.1)
+            image = tf.image.random_contrast(image, 0.5, 1.5)
             image = tf.image.random_flip_left_right(image)
             image = random_rotation(image, 0.05, crop=True) # radians
 

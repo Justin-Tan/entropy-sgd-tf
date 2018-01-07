@@ -35,7 +35,7 @@ from six.moves import cPickle
 from six.moves import urllib
 import tensorflow as tf
 
-import dataset_utils
+from tfrecords import dataset_utils
 
 # The URL where the CIFAR data can be downloaded.
 _DATA_URL = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
@@ -59,13 +59,6 @@ _CLASS_NAMES = [
     'ship',
     'truck',
 ]
-
-FLAGS = tf.app.flags.FLAGS
-
-tf.app.flags.DEFINE_string(
-    'dataset_dir',
-    None,
-    'The directory where the output TFRecords and temporary files are saved.')
 
 def _add_to_tfrecord(filename, tfrecord_writer, offset=0):
   """Loads data from the cifar10 pickle files and writes files to a TFRecord.
@@ -204,12 +197,3 @@ def run(dataset_dir):
   print('\nFinished converting the Cifar10 dataset!')
 
 
-
-def main(_):
-  if not FLAGS.dataset_dir:
-    raise ValueError('You must supply the dataset directory with --dataset_dir')
-
-  run(FLAGS.dataset_dir)
-
-if __name__ == '__main__':
-  tf.app.run()

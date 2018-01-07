@@ -42,9 +42,9 @@ class Model():
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        # self.logits = Network.wrn(self.example, config, self.training_phase)
+        self.logits = Network.wrn(self.example, config, self.training_phase)
         graph = ResNet(config, self.training_phase)
-        self.logits = graph.wrn(self.example)
+        # self.logits = graph.wrn(self.example)
 
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
@@ -53,7 +53,7 @@ class Model():
         self.cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
-        self.cost += graph.weight_decay() #var_label='kernel')
+        self.cost += graph.weight_decay(var_label='kernel')
 
         # decay by e every 10 epochs
         # learning_rate = tf.train.natural_exp_decay(config.learning_rate,
@@ -70,7 +70,6 @@ class Model():
             epoch_bounds], values=lr_values)
 
         # Exponential scoping
-        # gamma = config.g0*tf.pow(1.0+config.g1, tf.cast(self.global_step), tf.float32)
         gamma = tf.train.exponential_decay(config.g0, self.global_step,
             decay_steps=1, decay_rate=(1+config.g1))
 
