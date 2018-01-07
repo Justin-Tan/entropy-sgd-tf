@@ -18,8 +18,11 @@ be self-explanatory. For parameters labelled 'entropy-sgd specific', you may nee
 Checkpoints and Tensorboard scalars are saved beneath their respective directories. 
 
 ### Multi-GPU
+
 Coming soon...
+
 -----------------------------
+
 ## Results
 Both CIFAR-10/CIFAR-100 models are trained with the same hyperparameters and learning rate schedule specified in the original paper. The dataset is subjected to meanstd preprocessing and random rotations+reflections. Convergence when training on both datasets is compared with vanilla SGD and SGD with Nesterov momentum. The accuracy reported is the average of 5 runs with random weight initialization.
 
