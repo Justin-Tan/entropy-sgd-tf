@@ -3,8 +3,15 @@
 import tensorflow as tf
 import os, time
 from tensorflow.python.client import device_lib
+from datasets import dl_cifar10, dlcifar100
 
-class Diagnostics(object):
+class Diagnostics(object, dataset_name):
+    
+    @staticmethod
+    def setup_ckpts():
+        if not os.path.isdir('checkpoints'):
+            os.mkdir('checkpoints')
+            os.mkdir('checkpoints/best')
 
     @staticmethod
     def get_available_gpus():
@@ -15,7 +22,7 @@ class Diagnostics(object):
 
     @staticmethod
     def run_diagnostics(model, config, directories, sess, saver, train_handle,
-            test_handle, start_time, v_acc_best, epoch):
+            test_handle, start_time, v_acc_best, epoch, name):
         t0 = time.time()
         improved = ''
         sess.run(tf.local_variables_initializer())
@@ -36,12 +43,12 @@ class Diagnostics(object):
             improved = '[*]'
             if epoch>5:
                 save_path = saver.save(sess,
-                            os.path.join(directories.checkpoints_best, 'crnn_{}_epoch{}.ckpt'.format(config.mode, epoch)),
+                            os.path.join(directories.checkpoints_best, 'crnn_{}_epoch{}.ckpt'.format(name, epoch)),
                             global_step=epoch)
                 print('Graph saved to file: {}'.format(save_path))
 
         if epoch % 10 == 0 and epoch>10:
-            save_path = saver.save(sess, os.path.join(directories.checkpoints, 'crnn_{}_epoch{}.ckpt'.format(config.mode, epoch)), global_step=epoch)
+            save_path = saver.save(sess, os.path.join(directories.checkpoints, 'crnn_{}_epoch{}.ckpt'.format(name, epoch)), global_step=epoch)
             print('Graph saved to file: {}'.format(save_path))
 
         print('Epoch {} | Training Acc: {:.3f} | Test Acc: {:.3f} | Train Loss: {:.3f} | Test Loss: {:.3f} | Rate: {} examples/s ({:.2f} s) {}'.format(epoch, t_acc, v_acc, t_loss, v_loss, int(config.batch_size/(time.time()-t0)), time.time() - start_time, improved))

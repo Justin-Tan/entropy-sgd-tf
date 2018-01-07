@@ -46,13 +46,14 @@ def train(config, architecture, args):
         for epoch in range(config.num_epochs):
             sess.run(cnn.train_iterator.initializer)
             # Run diagnostics
-            v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle, test_handle, start_time, v_acc_best, epoch)
+            v_acc_best = Diagnostics.run_diagnostics(cnn, config_train, directories, sess, saver, train_handle,
+                test_handle, start_time, v_acc_best, epoch, args.name)
             while True:
                 try:
                     # Run SGLD iterations
                     # if optimizer=='entropy-sgd':
-                    # for l in range(config.L):
-                    #    sess.run([cnn.sgld_op], feed_dict={cnn.training_phase: True, cnn.handle: train_handle})
+                    for l in range(config.L):
+                        sess.run([cnn.sgld_op], feed_dict={cnn.training_phase: True, cnn.handle: train_handle})
 
                     # Update weights
                     sess.run([cnn.train_op, cnn.update_accuracy], feed_dict={cnn.training_phase: True,
@@ -64,13 +65,13 @@ def train(config, architecture, args):
 
                 except KeyboardInterrupt:
                     save_path = saver.save(sess, os.path.join(directories.checkpoints,
-                        'cnn_{}_last.ckpt'.format(config.mode)), global_step=epoch)
+                        'cnn_{}_last.ckpt'.format(args.name)), global_step=epoch)
                     print('Interrupted, model saved to: ', save_path)
                     sys.exit()
 
 
         save_path = saver.save(sess, os.path.join(directories.checkpoints,
-                               'cnn_{}_end.ckpt'.format(config.mode)),
+                               'cnn_{}_end.ckpt'.format(args.name)),
                                global_step=epoch)
 
     print("Training Complete. Model saved to file: {} Time elapsed: {:.3f} s".format(save_path, time.time()-start_time))
@@ -78,10 +79,10 @@ def train(config, architecture, args):
 def main(**kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument("-rl", "--restore_last", help="restore last saved model", action="store_true")
-    parser.add_argument("-r", "--restore_path", help="path to model to be restored")
-    # parser.add_argument("-opt", "--optimizer", nargs="?", const="entropy-sgd", help="Selected optimizer")
-    parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer")
-    parser.add_argument("-n", "--name", help="Name of Tensorboard records")
+    parser.add_argument("-r", "--restore_path", help="path to model to be restored", type=str)
+    parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer", type=str)
+    parser.add_argument("-n", "--name", default="entropy-sgd", help="Checkpoint/Tensorboard label")
+    parser.add_argument("-d", "--dataset", default="cifar-10", help="Dataset to train on (cifar-10 || cifar-100)")
     args = parser.parse_args()
     config=config_train
 
@@ -93,6 +94,9 @@ def main(**kwargs):
                     config.num_epochs,
                     args.optimizer
     )
+
+    Diagnostics.setup_ckpts()
+
     # Launch training
     train(config_train, architecture, args)
 

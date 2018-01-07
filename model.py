@@ -36,16 +36,15 @@ class Model():
         self.test_iterator = test_dataset.make_initializable_iterator()
         self.val_iterator = val_dataset.make_initializable_iterator()
 
-        with tf.device('/cpu:0'):
-            self.example, self.labels = self.iterator.get_next()
+        self.example, self.labels = self.iterator.get_next()
 
         if single_infer:
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        self.logits = Network.cnn_elu(self.example, config, self.training_phase)
+        # self.logits = Network.wrn(self.example, config, self.training_phase)
         graph = ResNet(config, self.training_phase)
-        # self.logits = graph.wrn(self.example)
+        self.logits = graph.wrn(self.example)
 
         self.pred = tf.argmax(self.logits, 1)
         self.softmax = tf.nn.softmax(self.logits)
@@ -54,10 +53,21 @@ class Model():
         self.cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits,
             labels=self.labels)
         self.cost = tf.reduce_mean(self.cross_entropy)
-        self.cost += graph.weight_decay(var_label='kernel')
+        self.cost += graph.weight_decay() #var_label='kernel')
 
-        learning_rate = tf.train.natural_exp_decay(config.learning_rate,
-            self.global_step, decay_steps=1, decay_rate=config.lr_decay_rate)
+        # decay by e every 10 epochs
+        # learning_rate = tf.train.natural_exp_decay(config.learning_rate,
+        #    self.global_step, decay_steps=1, decay_rate=config.lr_decay_rate)
+
+        if optimizer=='entropy-sgd':
+            epoch_bounds = [4, 8, 12, 16, 20, 24]
+            lr_values = [1.0, 2e-1, 4e-2, 8e-3, 1.6e-3, 3.2e-4]
+        else:
+            epoch_bounds = [60, 120, 160, 200, 220, 240]
+            lr_values = [1e-1, 2e-2, 4e-3, 8e-4, 1.6e-4, 3.2e-5]
+
+        learning_rate = tf.train.piecewise_constant(self.global_step, boundaries=[s*config.steps_per_epoch for s in
+            epoch_bounds], values=lr_values)
 
         # Exponential scoping
         # gamma = config.g0*tf.pow(1.0+config.g1, tf.cast(self.global_step), tf.float32)

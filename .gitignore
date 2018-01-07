@@ -15,6 +15,10 @@ checkpoints/*
 !checkpoints/.gitkeep
 !checkpoints/best/.gitkeep
 
+# slurm
+*.slurm
+*.log
+
 # Distribution / packaging
 .Python
 env/

@@ -11,12 +11,12 @@ class Network(object):
         # Implements W-28-10 wide residual network
         # See Arxiv 1605.07146
         network_width = 10 # k
-        block_multiplicity = 2 # n
+        block_multiplicity = 4 # n
         filters = [16, 16, 32, 64]
         init = tf.contrib.layers.xavier_initializer()
         kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
 
-        def residual_block2(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
+        def residual_block(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
             init = tf.contrib.layers.xavier_initializer()
             kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
 
@@ -42,7 +42,7 @@ class Network(object):
 
             return out
 
-        def residual_block2(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
+        def residual_block_2(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
             init = tf.contrib.layers.xavier_initializer()
             kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
             prev_filters = x.get_shape().as_list()[-1]
@@ -84,21 +84,21 @@ class Network(object):
             for n in range(block_multiplicity):
                 with tf.variable_scope('group1/{}'.format(n), reuse=reuse):
                     project_shortcut = True if n==0 else False
-                    rb = residual_block2(rb, f1, actv, project_shortcut=project_shortcut,
+                    rb = residual_block(rb, f1, actv, project_shortcut=project_shortcut,
                             keep_prob=config.conv_keep_prob, training=training, first_block=True)
             # Residual group 2 ------------------------------------------------>
             f2 = filters[2]*network_width
             for n in range(block_multiplicity):
                 with tf.variable_scope('group2/{}'.format(n), reuse=reuse):
                     project_shortcut = True if n==0 else False
-                    rb = residual_block2(rb, f2, actv, project_shortcut=project_shortcut,
+                    rb = residual_block(rb, f2, actv, project_shortcut=project_shortcut,
                             keep_prob=config.conv_keep_prob, training=training)
             # Residual group 3 ------------------------------------------------>
             f3 = filters[3]*network_width
             for n in range(block_multiplicity):
                 with tf.variable_scope('group3/{}'.format(n), reuse=reuse):
                     project_shortcut = True if n==0 else False
-                    rb = residual_block2(rb, f3, actv, project_shortcut=project_shortcut,
+                    rb = residual_block(rb, f3, actv, project_shortcut=project_shortcut,
                             keep_prob=config.conv_keep_prob, training=training)
             # Avg pooling + output -------------------------------------------->
             with tf.variable_scope('output', reuse=reuse):

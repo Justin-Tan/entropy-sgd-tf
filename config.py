@@ -32,13 +32,14 @@ class config_train(object):
     g0 = 1e-2
     g1 = 1e-3
     L = 20
-    lr_decay_rate = 2e-5
+    lr_decay_rate = 5e-3
     momentum = 0.9
     weight_decay = 5e-4
+    steps_per_epoch = 50000//batch_size
 
 class directories(object):
-    train = 'tfrecords/cifar10/cifar10_train.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_train.tfrecord'
-    test = 'tfrecords/cifar10/cifar10_test.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_test.tfrecord'
+    train = 'dataset/cifar10/cifar10_train.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_train.tfrecord'
+    test = 'dataset/cifar10/cifar10_test.tfrecord' #'/var/local/tmp/jtan/cifar10/cifar10_test.tfrecord'
     tensorboard = 'tensorboard'
     checkpoints = 'checkpoints'
     checkpoints_best = 'checkpoints/best'
