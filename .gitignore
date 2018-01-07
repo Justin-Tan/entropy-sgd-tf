@@ -12,7 +12,7 @@ __pycache__/
 *.gz
 
 # checkpoints
-checkpoints/*
+# checkpoints/*
 !checkpoints/.gitkeep
 !checkpoints/best/.gitkeep
 
@@ -128,5 +128,5 @@ shapes_cache
 
 # Other data
 *.swp
-checkpoints/
-tensorboard/
+# checkpoints/
+# tensorboard/

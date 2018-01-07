@@ -1,4 +1,5 @@
 # entropy-sgd-tf
+
 TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide valleys](https://arxiv.org/pdf/1611.01838.pdf). The entropy-SGD optimization algorithm uses geometric information about the energy landscape to bias the optimization algorithm toward flat regions of the loss function, which may aid generalization.
 -----------------------------
 ## Instructions
