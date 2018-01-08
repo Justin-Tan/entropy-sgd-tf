@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import time, os, sys
 import argparse
+import horovod.tensorflow as hvd
 
 # User-defined
 from network import Network
@@ -102,6 +103,9 @@ def main(**kwargs):
     )
 
     Diagnostics.setup_dataset(args.dataset)
+
+    hvd.init()
+
 
     # Launch training
     train(config_train, architecture, args)

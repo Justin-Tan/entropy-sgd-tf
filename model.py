@@ -42,8 +42,8 @@ class Model():
             self.path = tf.placeholder(paths.dtype)
             self.example = Data.preprocess_inference(self.path)
 
-        self.logits = Network.wrn(self.example, config, self.training_phase)
         graph = ResNet(config, self.training_phase)
+        self.logits = Network.wrn(self.example, config, self.training_phase)
         # self.logits = graph.wrn(self.example)
 
         self.pred = tf.argmax(self.logits, 1)
@@ -61,10 +61,10 @@ class Model():
 
         if optimizer=='entropy-sgd':
             epoch_bounds = [4, 8, 12, 16, 20, 24]
-            lr_values = [1.0, 2e-1, 4e-2, 8e-3, 1.6e-3, 3.2e-4]
+            lr_values = [1.0, 2e-1, 4e-2, 8e-3, 1.6e-3, 3.2e-4, 6.4e-5]
         else:
             epoch_bounds = [60, 120, 160, 200, 220, 240]
-            lr_values = [1e-1, 2e-2, 4e-3, 8e-4, 1.6e-4, 3.2e-5]
+            lr_values = [1e-1, 2e-2, 4e-3, 8e-4, 1.6e-4, 3.2e-5, 6.4e-6]
 
         learning_rate = tf.train.piecewise_constant(self.global_step, boundaries=[s*config.steps_per_epoch for s in
             epoch_bounds], values=lr_values)
@@ -77,7 +77,7 @@ class Model():
             # Ensures that we execute the update_ops before performing the train_step
             if optimizer=='entropy-sgd':
                 opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
-                    config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.1})
+                        config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.1, 'momentum':0.9})
                 self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
                 self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
             elif optimizer=='adam':

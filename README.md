@@ -27,7 +27,7 @@ Coming soon...
 Both CIFAR-10/CIFAR-100 models are trained with the same hyperparameters and learning rate schedule specified in the original paper. The dataset is subjected to meanstd preprocessing and random rotations+reflections. Convergence when training on both datasets is compared with vanilla SGD and SGD with Nesterov momentum. The accuracy reported is the average of 5 runs with random weight initialization.
 
 Models trained without entropy-SGD are run for 200 epochs, models trained with entropy-SGD are run with L=20 for 10
-epochs, with the hyperparameters specified under arXiv 1611.01838, 5.3.
+epochs, with the hyperparameters specified as in the CIFAR-10 run in the original paper. 
 
 ### CIFAR-10
 ```

@@ -12,4 +12,4 @@
 module load CUDA/8.0.44
 export LD_LIBRARY_PATH=/data/projects/punim0011/cuda/lib64:$LD_LIBRARY_PATH
 
-python3 train.py -opt momentum -n wrn_momentum_28_10
+python3 train.py -opt momentum -n wrn_p2810

@@ -39,6 +39,7 @@ class EntropySGD(optimizer.Optimizer):
 
         self._learning_rate = config['lr']
         self._gamma = config['gamma']
+        self._momentum = config['momentum']
 
         # Scalar parameter tensors
         self._lr_tensor = None
@@ -55,7 +56,7 @@ class EntropySGD(optimizer.Optimizer):
                                                 name="learning_rate")
         self._gamma_tensor = ops.convert_to_tensor(self._gamma,
                                                    name="gamma")
-        self._momentum_tensor = ops.convert_to_tensor(self.config['momentum'],
+        self._momentum_tensor = ops.convert_to_tensor(self._momentum,
                                                       name="momentum")
 
     def _create_slots(self, var_list):
@@ -64,26 +65,30 @@ class EntropySGD(optimizer.Optimizer):
         for v in var_list:
             wc = self._zeros_slot(v, "wc", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
+            mv = self._zeros_slot(v, "mv", self._name)
 
     def _apply_dense(self, grad, var):
         # Apply weight updates
         lr_t = math_ops.cast(self._lr_tensor, var.dtype.base_dtype)
         gamma_t = math_ops.cast(self._gamma_tensor, var.dtype.base_dtype)
+        momentum_t = math_ops.cast(self._momentum_tensor, var.dtype.base_dtype)
 
         wc = self.get_slot(var, "wc")
         mu = self.get_slot(var, "mu")
+        mv = self.get_slot(var, "mv")
 
         wc_t = wc.assign(self.sgld_opt.get_slot(var, "wc"))
         mu_t = mu.assign(self.sgld_opt.get_slot(var, "mu"))
+        mv_t = mv.assign(momentum_t*mv + (var-mu_t))
 
         # Reset weights to pre-SGLD state, then execute update
         var_reset = state_ops.assign(var, wc_t)
 
         with tf.control_dependencies([var_reset]):
             # var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
-            var_update = state_ops.assign_sub(var, lr_t*(var-mu_t))
+            var_update = state_ops.assign_sub(var, lr_t*(var-mu_t)+lr_t*((var-mu_t)+momentum_t*mv_t))
 
-        return control_flow_ops.group(*[var_update, mu_t, wc_t])
+        return control_flow_ops.group(*[var_update, mu_t, wc_t, mv_t])
 
     def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")

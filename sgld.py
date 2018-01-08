@@ -63,6 +63,7 @@ class local_entropy_sgld(optimizer.Optimizer):
             wc = self._zeros_slot(v, "wc", self._name)
             xp = self._zeros_slot(v, "xp", self._name)
             mu = self._zeros_slot(v, "mu", self._name)
+            mv = self._zeros_slot(v, "mv", self._name)
 
     def _apply_dense(self, grad, var):
         # Updates dummy weights during SGLD
@@ -76,6 +77,7 @@ class local_entropy_sgld(optimizer.Optimizer):
         wc = self.get_slot(var, 'wc')
         xp = self.get_slot(var, 'xp')
         mu = self.get_slot(var, 'mu')
+        mv = self.get_slot(var, 'mv')
 
         wc_t = tf.cond(tf.logical_not(tf.cast(tf.mod(self.sgld_global_step, self._L_t), tf.bool)),
             lambda: wc.assign(var),
@@ -85,13 +87,21 @@ class local_entropy_sgld(optimizer.Optimizer):
         eta_t = math_ops.cast(eta, var.dtype.base_dtype)
 
         # update = -lr_prime_t*(grad-gamma_t*(wc-var)) + tf.sqrt(lr_prime)*epsilon_t*eta_t
-        xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
+        mv_t = mv.assign(momentum_t*mv + grad)
+
+        # Nesterov's momentum enabled by default
+        if self._momentum > 0:
+            xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t-lr_prime_t*(grad+momentum_t*mv_t))
+            var_update = state_ops.assign_sub(var,
+                lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t+lr_prime_t*(grad+momentum_t*mv_t))
+        else:
+            xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
+            var_update = state_ops.assign_sub(var,
+                lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
+
         mu_t = mu.assign((1.0-alpha_t)*mu + alpha_t*xp)
 
-        var_update = state_ops.assign_sub(var,
-            lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
-
-        return control_flow_ops.group(*[var_update, wc_t, xp_t, mu_t])
+        return control_flow_ops.group(*[var_update, mv_t, wc_t, xp_t, mu_t])
 
     def _apply_sparse(self, grad, var_list):
         raise NotImplementedError("Optimizer does not yet support sparse gradient updates.")

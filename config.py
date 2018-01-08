@@ -4,7 +4,7 @@ class config_train(object):
     mode = 'beta'
     n_layers = 5
     num_epochs = 512
-    batch_size = 256
+    batch_size = 128
     ema_decay = 0.999
     learning_rate = 1e-3
     n_classes = 10
