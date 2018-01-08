@@ -30,9 +30,10 @@ Models trained without entropy-SGD are run for 200 epochs, models trained with e
 epochs, with the hyperparameters specified as in the CIFAR-10 run in the original paper. 
 
 ### CIFAR-10
-```
-# Plots showing convergence of entropy-sgd v. sgd here.
-```
+Entropy-SGD seems to be outperformed by SGD + momentum. Retraining by applying momentum to the SGLD and outer loop updates.
+
+<img src="tfrecords/cifar10/res.png" width="600">
+
 ### CIFAR-100
 ```
 # Plots showing convergence of entropy-sgd v. sgd here.
