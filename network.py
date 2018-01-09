@@ -11,7 +11,7 @@ class Network(object):
         # Implements W-28-10 wide residual network
         # See Arxiv 1605.07146
         network_width = 10 # k
-        block_multiplicity = 4 # n
+        block_multiplicity = 3 # n
 
         filters = [16, 16, 32, 64]
         init = tf.contrib.layers.xavier_initializer()

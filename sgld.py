@@ -91,9 +91,9 @@ class local_entropy_sgld(optimizer.Optimizer):
 
         # Nesterov's momentum enabled by default
         if self._momentum > 0:
-            xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t-lr_prime_t*(grad+momentum_t*mv_t))
+            xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t-lr_prime_t*momentum_t*mv_t)
             var_update = state_ops.assign_sub(var,
-                lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t+lr_prime_t*(grad+momentum_t*mv_t))
+                lr_prime_t*(grad-gamma_t*(wc-var))-tf.sqrt(lr_prime_t)*epsilon_t*eta_t+lr_prime_t*momentum_t*mv_t)
         else:
             xp_t = xp.assign(var-lr_prime_t*(grad-gamma_t*(wc-var))+tf.sqrt(lr_prime_t)*epsilon_t*eta_t)
             var_update = state_ops.assign_sub(var,

@@ -86,7 +86,7 @@ class EntropySGD(optimizer.Optimizer):
 
         with tf.control_dependencies([var_reset]):
             # var_update = state_ops.assign_sub(var, lr_t*gamma_t*(var-mu_t))
-            var_update = state_ops.assign_sub(var, lr_t*(var-mu_t)+lr_t*((var-mu_t)+momentum_t*mv_t))
+            var_update = state_ops.assign_sub(var, lr_t*((var-mu_t)+momentum_t*mv_t))
 
         return control_flow_ops.group(*[var_update, mu_t, wc_t, mv_t])
 

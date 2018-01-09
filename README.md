@@ -5,13 +5,13 @@ TensorFlow implementation of [Entropy SGD: Biasing gradient descent into wide va
 -----------------------------
 ## Instructions
 The CIFAR-10 dataset will be automatically downloaded and converted to tfrecord format when first run. The default is
-to run on CIFAR-10 with SGD and Nesterov momentum on a wide residual network (28x10). For a complete list of options run `python3 train.py -h`, e.g. to run
-on CIFAR-10 using the entropy-sgd optimizer with 20 Langevin iterations:
+to run on CIFAR-10 with the entropy-SGD optimizer with 20 Langevin iterations on a wide residual network (28x10). For a complete list of options run `python3 train.py -h`, e.g. to run
+on CIFAR-10 using the entropy-sgd optimizer with 5 Langevin iterations:
 ```
 # Check command line arguments
 $ python3 train.py -h
 # Run
-$ python3 train.py -opt entropy-sgd -L 20
+$ python3 train.py -opt entropy-sgd -L 5
 ```
 The default hyperparameters (used to report all results) can be accessed and set in the `config.py` file under `config_train`. Most should
 be self-explanatory. For parameters labelled 'entropy-sgd specific', you may need to refer to the original paper.

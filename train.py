@@ -87,7 +87,7 @@ def main(**kwargs):
     parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer", type=str)
     parser.add_argument("-n", "--name", default="entropy-sgd", help="Checkpoint/Tensorboard label")
     parser.add_argument("-d", "--dataset", default="cifar10", help="Dataset to train on (cifar10 || cifar100)", type=str)
-    parser.add_argument("-L", "--langevin_iterations", default=0, help="Number of Langevin iterations in inner loop.",
+    parser.add_argument("-L", "--langevin_iterations", default=20, help="Number of Langevin iterations in inner loop.",
             type=int)
     args = parser.parse_args()
     config = config_train

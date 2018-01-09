@@ -66,7 +66,7 @@ class Data(object):
             image = tf.image.convert_image_dtype(image, dtype=tf.float32)
             image.set_shape([32,32,3])
 
-            if augment:
+            if augment and not test:
                 image = _augment(image)
 
             image = tf.image.per_image_standardization(image)

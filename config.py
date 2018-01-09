@@ -17,8 +17,8 @@ class config_train(object):
     weight_decay = 5e-4
     steps_per_epoch = 50000//batch_size
     # entropy-sgd specific
-    g0 = 1e-2
-    g1 = 1e-3
+    g0 = 5e-3
+    g1 = 5e-4
     L = 20
 
 class config_test(object):
@@ -38,8 +38,8 @@ class config_test(object):
     weight_decay = 5e-4
     steps_per_epoch = 50000//batch_size
     # entropy-sgd specific
-    g0 = 1e-2
-    g1 = 1e-3
+    g0 = 1e-3
+    g1 = 1e-4
     L = 20
 
 class directories(object):
