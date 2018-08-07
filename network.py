@@ -11,15 +11,15 @@ class Network(object):
         # Implements W-28-10 wide residual network
         # See Arxiv 1605.07146
         network_width = 10 # k
-        block_multiplicity = 3 # n
+        block_multiplicity = 4 # n
 
         filters = [16, 16, 32, 64]
         init = tf.contrib.layers.xavier_initializer()
-        kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
+        kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':False}
 
         def residual_block(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
             init = tf.contrib.layers.xavier_initializer()
-            kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
+            kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':False}
 
             if project_shortcut:
                 strides = [2,2] if not first_block else [1,1]
@@ -45,7 +45,7 @@ class Network(object):
 
         def residual_block_2(x, n_filters, actv, keep_prob, training, project_shortcut=False, first_block=False):
             init = tf.contrib.layers.xavier_initializer()
-            kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
+            kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':False}
             prev_filters = x.get_shape().as_list()[-1]
             if project_shortcut:
                 strides = [2,2] if not first_block else [1,1]
@@ -113,7 +113,7 @@ class Network(object):
     @staticmethod
     def cnn_base(x, config, training, reuse=False, actv=tf.nn.relu):
         init = tf.contrib.layers.xavier_initializer()
-        kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':True}
+        kwargs = {'center':True, 'scale':True, 'training':training, 'fused':True, 'renorm':False}
         with tf.variable_scope('conv', reuse=reuse):
             # x = tf.reshape(x, shape=[-1, config.im_x, config.im_y, 1])
             # Convolutional blocks -------------------------------------------->

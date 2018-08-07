@@ -21,7 +21,7 @@ def train(config, architecture, args):
     global_step, n_checkpoints, v_acc_best = 0, 0, 0.
     ckpt = tf.train.get_checkpoint_state(directories.checkpoints)
 
-    if args.name=='cifar100':
+    if args.dataset=='cifar100':
         config.n_classes = 100
     config.L = args.langevin_iterations
 
@@ -84,9 +84,11 @@ def main(**kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument("-rl", "--restore_last", help="restore last saved model", action="store_true")
     parser.add_argument("-r", "--restore_path", help="path to model to be restored", type=str)
-    parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer", type=str)
+    parser.add_argument("-opt", "--optimizer", default="entropy-sgd", help="Selected optimizer", type=str,
+        choices=['entropy-sgd', 'adam', 'momentum', 'sgd'])
     parser.add_argument("-n", "--name", default="entropy-sgd", help="Checkpoint/Tensorboard label")
-    parser.add_argument("-d", "--dataset", default="cifar10", help="Dataset to train on (cifar10 || cifar100)", type=str)
+    parser.add_argument("-d", "--dataset", default="cifar10", help="Dataset to train on (cifar10 || cifar100)",
+            type=str, choices=['cifar10', 'cifar100'])
     parser.add_argument("-L", "--langevin_iterations", default=20, help="Number of Langevin iterations in inner loop.",
             type=int)
     args = parser.parse_args()

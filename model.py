@@ -28,7 +28,7 @@ class Model():
                                          test=True)
         val_dataset = Data.load_dataset(directories.test, config.batch_size)
 
-        self.iterator = tf.contrib.data.Iterator.from_string_handle(self.handle,
+        self.iterator = tf.data.Iterator.from_string_handle(self.handle,
                                                                     train_dataset.output_types,
                                                                     train_dataset.output_shapes)
 
@@ -57,7 +57,7 @@ class Model():
 
         if optimizer=='entropy-sgd':
             epoch_bounds = [4, 8, 12, 16, 20, 24]
-            lr_values = [8e-1, 1.6e-1, 3.2e-2, 6.4e-3, 1.28e-3, 2.56e-4, 5.12e-5]
+            lr_values = [4e-1, 1.6e-1, 3.2e-2, 6.4e-3, 1.28e-3, 2.56e-4, 5.12e-5]
         else:
             epoch_bounds = [60, 120, 160, 200, 220, 240]
             lr_values = [1e-1, 2e-2, 4e-3, 8e-4, 1.6e-4, 3.2e-5, 6.4e-6]
@@ -73,10 +73,11 @@ class Model():
             # Ensures that we execute the update_ops before performing the train_step
             if optimizer=='entropy-sgd':
                 opt = EntropySGD(self.iterator, self.training_phase, self.sgld_global_step,
-                        config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.1, 'momentum':0.9})
+                        config={'lr':learning_rate, 'gamma':gamma, 'lr_prime':0.12})# , 'momentum':0.9})
                 self.sgld_op = opt.sgld_opt.minimize(self.cost, global_step=self.sgld_global_step)
                 self.opt_op = opt.minimize(self.cost, global_step=self.global_step)
             elif optimizer=='adam':
+                print('WARNING: You may want to use a lower learning rate than the default (0.1) using Adam')
                 self.opt_op = tf.train.AdamOptimizer(learning_rate).minimize(self.cost, global_step=self.global_step)
             elif optimizer=='momentum':
                 self.opt_op = tf.train.MomentumOptimizer(learning_rate, config.momentum,

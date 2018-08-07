@@ -1,15 +1,20 @@
 #!/bin/bash
-#SBATCH --partition physics-gpu
+#SBATCH --partition gpgpu
 #SBATCH --nodes 1
 #SBATCH --cpus-per-task 6
 #SBATCH --gres gpu:2
-#SBATCH --time 96:00:00
+#SBATCH -A punim0514
+#SBATCH -p gpgpu
+#SBATCH --time 48:00:00
 #SBATCH --mem-per-cpu 20G
-#SBATCH --job-name wrn_28_10
-#SBATCH --output wrn_momentum-%J.log
+#SBATCH --job-name wrn_gpgpu
+#SBATCH --output wrn-%J.log
 
 # Load modules
-module load CUDA/8.0.44
-export LD_LIBRARY_PATH=/data/projects/punim0011/cuda/lib64:$LD_LIBRARY_PATH
+# module load CUDA/8.0.44
+# export LD_LIBRARY_PATH=/data/projects/punim0011/cuda/lib64:$LD_LIBRARY_PATH
+# module load CUDA/9.2.88-intel-2017.u2
 
-python3 train.py -opt momentum -n wrn_p2810
+date
+
+python3 train.py -opt adam -n mlhep -d cifar10

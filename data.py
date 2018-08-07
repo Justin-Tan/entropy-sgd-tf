@@ -75,8 +75,10 @@ class Data(object):
 
             return image, label
 
-        dataset = tf.contrib.data.TFRecordDataset(filenames)
+        dataset = tf.data.TFRecordDataset(filenames)
         dataset = dataset.map(_parser)
+        dataset = dataset.cache()
+        # dataset = dataset.map_and_batch(_parser)
         dataset = dataset.shuffle(buffer_size=2048)
         dataset = dataset.batch(batch_size)
 
