@@ -334,3 +334,8 @@ class Network(object):
                 cnn_out = tf.layers.dense(fc, units=config.n_classes, kernel_initializer=init)
 
         return cnn_out
+
+    @staticmethod
+    def encoder(x, config, training, reuse=False, actv=tf.nn.relu):
+        init =  tf.keras.initializers.he_normal()
+
